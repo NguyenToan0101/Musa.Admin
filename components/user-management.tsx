@@ -1,6 +1,39 @@
 "use client"
+interface User {
+  id: number
+  name: string
+  email: string
+  phone: string
+  role: "Seller" | "Customer"
+  status: boolean
+  joinDate: string
+  orders: number
+  spent: string
 
-import { useState } from "react"
+  // Thông tin bổ sung
+  gender?: string
+  dateOfBirth?: string
+  address?: string
+
+  // Nếu là người bán
+  idNumber?: string
+  shopName?: string
+  fullAddress?: string
+  businessType?: string
+  phoneShop?: string
+  taxCode?: string
+  invoiceEmail?: string
+  manageName?: string
+  statusShop?: string
+  express?: boolean
+  fast?: boolean
+  economy?: boolean
+  lockerDelivery?: boolean
+  bulkyItems?: boolean
+}
+
+
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,74 +49,167 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Search, MoreHorizontal, UserCheck, UserX, Trash2, Eye } from "lucide-react"
+import { useEffect, useState } from "react"
+import axios from "axios"
+import React from "react"
 
-const users = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    email: "nguyenvana@email.com",
-    phone: "0123456789",
-    role: "customer",
-    status: "active",
-    joinDate: "2024-01-15",
-    orders: 23,
-    spent: "₫2,450,000",
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    email: "tranthib@email.com",
-    phone: "0987654321",
-    role: "seller",
-    status: "active",
-    joinDate: "2024-02-20",
-    orders: 156,
-    spent: "₫15,670,000",
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    email: "levanc@email.com",
-    phone: "0456789123",
-    role: "customer",
-    status: "lock",
-    joinDate: "2024-03-10",
-    orders: 5,
-    spent: "₫890,000",
-  },
-  {
-    id: 4,
-    name: "Phạm Thị D",
-    email: "phamthid@email.com",
-    phone: "0789123456",
-    role: "seller",
-    status: "PENDING_APPROVAL",
-    joinDate: "2024-03-25",
-    orders: 0,
-    spent: "₫0",
-  },
-]
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+
+
+
 
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [users, setUsers] = useState<User[]>([])
+  const [expandedUserId, setExpandedUserId] = useState<number | null>(null);
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [selectedUserToLock, setSelectedUserToLock] = useState<User | null>(null);
+  const [lockUntil, setLockUntil] = useState<Date | null>(null);
+  const handleDeleteUser = async (id: number, name: string) => {
+    const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${name}" không?`);
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/users/${id}`);
+
+      setUsers((prev) => prev.filter((user) => user.id !== id));
+    } catch (error) {
+      console.error("Lỗi khi xóa người dùng:", error);
+      alert("Xóa người dùng thất bại. Vui lòng thử lại.");
+    }
+  };
+
+
+
+  useEffect(() => {
+    axios.get(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/users`)
+      .then((res) => {
+        const formatted = res.data.map((u: any) => ({
+          id: u.customerid,
+          name: u.fullName,
+          email: u.email,
+          phone: u.phone,
+          role: u.role,
+          status: u.status,
+          joinDate: u.joinedDate,
+          orders: u.totalOrders,
+          spent: new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(u.totalSpending),
+
+          gender: u.gender === 'M' ? "Nam" : u.gender === 'F' ? "Nữ" : "Khác",
+          dateOfBirth: u.dateOfBirth,
+          address: u.address,
+
+          // Thông tin nếu là người bán
+          idNumber: u.idNumber,
+          shopName: u.shopName,
+          fullAddress: u.fullAddress,
+          businessType: u.businessType,
+          phoneShop: u.phoneShop,
+          taxCode: u.taxCode,
+          invoiceEmail: u.invoiceEmail,
+          manageName: u.manageName,
+          statusShop: u.statusShop,
+          express: u.express,
+          fast: u.fast,
+          economy: u.economy,
+          lockerDelivery: u.lockerDelivery,
+          bulkyItems: u.bulkyItems
+        }));
+
+        setUsers(formatted);
+      })
+      .catch((err) => console.error("Lỗi tải danh sách người dùng:", err));
+  }, []);
+
+
+
 
   const filteredUsers = users.filter((user) => {
+    if (!user || !user.name || !user.email) return false;
+
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = filterRole === "all" || user.role === filterRole
-    const matchesStatus = filterStatus === "all" || user.status === filterStatus
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchesSearch && matchesRole && matchesStatus
-  })
+    const matchesRole = filterRole === "all" || user.role === filterRole;
+
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "active" && user.status === true) ||
+      (filterStatus === "lock" && user.status === false);
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  //Khóa người dùng
+  const handleConfirmLockUser = async () => {
+    if (!selectedUserToLock || !lockUntil) return;
+
+    const now = new Date();
+    const durationMinutes = Math.ceil((lockUntil.getTime() - now.getTime()) / (60 * 1000));
+
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BACKEND}/admin/users/${selectedUserToLock.id}/lock`,
+        { durationMinutes: durationMinutes },
+        {
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+      // cập nhật UI
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === selectedUserToLock.id ? { ...u, status: false } : u
+        )
+      );
+      setShowLockModal(false);
+      setSelectedUserToLock(null);
+      setLockUntil(null);
+    } catch (error) {
+      console.error("Lỗi khi khóa tài khoản:", error);
+      alert("Khóa tài khoản thất bại.");
+    }
+  };
+
+
+  // Mở khóa Người dùng
+  const handleUnlockUser = async (userId: number) => {
+    try {
+      await axios.put(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/users/${userId}/unlock`);
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId ? { ...user, status: true } : user
+        )
+      );
+    } catch (error) {
+      console.error("Lỗi khi mở khóa người dùng:", error);
+      alert("Mở khóa người dùng thất bại.");
+    }
+  };
+
+
+
+
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-[#001F54]">Quản lý Người dùng</h1>
-        <Button className="bg-[#001F54] hover:bg-[#001F54]/90">Thêm người dùng mới</Button>
+        {/* <Button className="bg-[#001F54] hover:bg-[#001F54]/90">Thêm người dùng mới</Button> */}
       </div>
 
       {/* Filters */}
@@ -108,8 +234,8 @@ export function UserManagement() {
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4DD0E1]"
             >
               <option value="all">Tất cả vai trò</option>
-              <option value="customer">Người mua</option>
-              <option value="seller">Người bán</option>
+              <option value="Customer">Người mua</option>
+              <option value="Seller">Người bán</option>
             </select>
             <select
               value={filterStatus}
@@ -143,79 +269,165 @@ export function UserManagement() {
                 <TableHead>Tổng chi tiêu</TableHead>
                 <TableHead className="text-right">Hành động</TableHead>
               </TableRow>
+
+
+
+
             </TableHeader>
             <TableBody>
               {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src="/placeholder.svg" />
-                        <AvatarFallback className="bg-[#4DD0E1] text-white">{user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                        <div className="text-sm text-gray-500">{user.phone}</div>
+                <React.Fragment key={user.id}>
+                  <TableRow>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback className="bg-[#4DD0E1] text-white">{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                          <div className="text-sm text-gray-500">{user.phone}</div>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={user.role === "seller" ? "bg-[#81C784] text-white" : "bg-[#4DD0E1] text-white"}>
-                      {user.role === "seller" ? "Người bán" : "Người mua"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.status === "active" ? "default" : user.status === "lock" ? "destructive" : "secondary"
-                      }
-                      className={user.status === "active" ? "bg-[#81C784] text-white" : ""}
-                    >
-                      {user.status === "active" ? "Hoạt động" : user.status === "lock" ? "Bị khóa" : "Chờ duyệt"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{user.joinDate}</TableCell>
-                  <TableCell>{user.orders}</TableCell>
-                  <TableCell>{user.spent}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Xem chi tiết
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {user.status === "active" ? (
-                          <DropdownMenuItem className="text-red-600">
-                            <UserX className="mr-2 h-4 w-4" />
-                            Khóa tài khoản
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={user.role === "Seller" ? "bg-[#81C784] text-white" : "bg-[#4DD0E1] text-white"}>
+                        {user.role === "Seller" ? "Người bán" : "Người mua"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={user.status ? "default" : "destructive"}
+                        className={user.status ? "bg-[#81C784] text-white" : ""}
+                      >
+                        {user.status ? "Hoạt động" : "Bị khóa"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{user.joinDate}</TableCell>
+                    <TableCell>{user.orders}</TableCell>
+                    <TableCell>{user.spent}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => setExpandedUserId(user.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Xem chi tiết
                           </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem className="text-green-600">
-                            <UserCheck className="mr-2 h-4 w-4" />
-                            Mở khóa tài khoản
+                          <DropdownMenuSeparator />
+                          {user.status ? (
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => {
+                                setSelectedUserToLock(user);
+                                setShowLockModal(true);
+                              }}
+                            >
+                              <UserX className="mr-2 h-4 w-4" />
+                              Khóa tài khoản
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              className="text-green-600"
+                              onClick={() => handleUnlockUser(user.id)}
+                            >
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              Mở khóa tài khoản
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => handleDeleteUser(user.id, user.name)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Xóa tài khoản
                           </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Xóa tài khoản
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+
+                  {expandedUserId === user.id && (
+                    <TableRow>
+                      <TableCell colSpan={7}>
+                        <div className="p-4 bg-gray-50 rounded-md space-y-2 text-sm">
+                          <p><strong>Giới tính:</strong> {user.gender}</p>
+                          <p><strong>Ngày sinh:</strong> {user.dateOfBirth}</p>
+                          <p><strong>Địa chỉ:</strong> {user.address}</p>
+                          {user.role === "Seller" && (
+                            <>
+                              <p><strong>CCCD:</strong> {user.idNumber}</p>
+                              <p><strong>Tên cửa hàng:</strong> {user.shopName}</p>
+                              <p><strong>Địa chỉ shop:</strong> {user.fullAddress}</p>
+                              <p><strong>Người quản lý:</strong> {user.manageName}</p>
+                              <p><strong>SĐT cửa hàng:</strong> {user.phoneShop}</p>
+                              <p><strong>Email hóa đơn:</strong> {user.invoiceEmail}</p>
+                              <p><strong>Mã số thuế:</strong> {user.taxCode}</p>
+                              <p><strong>Loại hình kinh doanh:</strong> {user.businessType}</p>
+                              <p><strong>Trạng thái shop:</strong> {user.statusShop}</p>
+                              <p><strong>Dịch vụ:</strong>
+                                {["express", "fast", "economy", "lockerDelivery", "bulkyItems"]
+                                  .filter(service => user[service as keyof User])
+                                  .map(service => ` ${service}`)
+                                  .join(", ") || "Không có"}
+                              </p>
+                            </>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setExpandedUserId(null)}
+                            className="mt-2"
+                          >
+                            Đóng chi tiết
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                </React.Fragment>
               ))}
             </TableBody>
+
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={showLockModal} onOpenChange={setShowLockModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chọn thời gian khóa tài khoản</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>
+              Khóa tài khoản <strong>{selectedUserToLock?.name}</strong> cho đến:
+            </p>
+            <DatePicker
+              selected={lockUntil}
+              onChange={(date) => setLockUntil(date)}
+              showTimeSelect
+              dateFormat="Pp"
+              className="w-full border px-2 py-1 rounded"
+            />
+            <Button
+              className="bg-red-600 text-white"
+              onClick={handleConfirmLockUser}
+              disabled={!lockUntil}
+            >
+              Xác nhận khóa
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -68,6 +68,7 @@ import {
   AreaChart,
   Area,
 } from "recharts"
+import axios from "axios"
 
 // Dữ liệu mẫu cho khuyến mãi
 const promotions = [
@@ -143,12 +144,12 @@ const promotions = [
 
 // Dữ liệu thống kê hiệu quả khuyến mãi
 const promotionEffectivenessData = [
-  { month: "01/2024", revenue: 180000000, orders: 1850, discount: 25000000 },
-  { month: "02/2024", revenue: 165000000, orders: 1650, discount: 22000000 },
-  { month: "03/2024", revenue: 210000000, orders: 2100, discount: 28000000 },
-  { month: "04/2024", revenue: 195000000, orders: 1950, discount: 26000000 },
-  { month: "05/2024", revenue: 225000000, orders: 2250, discount: 30000000 },
-  { month: "06/2024", revenue: 240000000, orders: 2400, discount: 32000000 },
+  { month: "01/2025", revenue: 180000000, orders: 1850, discount: 25000000 },
+  { month: "02/2025", revenue: 165000000, orders: 1650, discount: 22000000 },
+  { month: "03/2025", revenue: 210000000, orders: 2100, discount: 28000000 },
+  { month: "04/2025", revenue: 195000000, orders: 1950, discount: 26000000 },
+  { month: "05/2025", revenue: 225000000, orders: 2250, discount: 30000000 },
+  { month: "06/2025", revenue: 240000000, orders: 2400, discount: 32000000 },
 ]
 
 // Dữ liệu phân bố loại khuyến mãi
@@ -172,6 +173,21 @@ export function PromotionManagement() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [filterType, setFilterType] = useState("all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  //Data reponse
+  const [overviewData, setOverviewData] = useState({
+    revenue: 0,
+  order:0,
+  conversionRate: 0,
+  newUser: 0,
+  })
+  const [promotionList, setPromotionList] = useState()
+  const [analyticsData, setAnalyticsData] = useState()
+  const [templateList, setTemplateList] = useState()
+
+
+
+
+
 
   const filteredPromotions = promotions.filter((promo) => {
     const matchesSearch =
@@ -182,6 +198,25 @@ export function PromotionManagement() {
 
     return matchesSearch && matchesStatus && matchesType
   })
+  const formatCurrency = (v: number) =>
+    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
+
+  useEffect(() => {
+    axios.get(`${process.env.NEXT_PUBLIC_API_BACKEND}/promotion/data`).then(
+      res => {
+        if(res.data !=null){
+        setOverviewData(res.data.overview);
+        // setPromotionList(res.data.promotions);
+        // setAnalyticsData(res.data.analytics);
+        // setTemplateList(res.data.templates);
+        console.log('Success'+JSON.stringify(res.data))
+        }else{
+          console.error("ERROR: Not information get")
+        }
+      }
+    ).catch(err => console.error("API error:", err));
+  }, []
+  )
 
   return (
     <div className="space-y-6">
@@ -240,99 +275,99 @@ export function PromotionManagement() {
         {/* Tab Tổng quan */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
- 
-          <Card className="relative overflow-hidden bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#001F54]/5 to-[#4DD0E1]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-            <CardTitle className="text-sm font-medium text-gray-600">Tổng doanh thu từ KM</CardTitle>
-            <div className="p-2 bg-gradient-to-r from-[#001F54] to-[#4DD0E1] rounded-lg">
-              <DollarSign className="h-4 w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-3xl font-bold bg-gradient-to-r from-[#001F54] to-[#4DD0E1] bg-clip-text text-transparent">
-              ₫45,231,000
-            </div>
-            <div className="flex items-center mt-2">
-              <div className="flex items-center text-emerald-600 text-sm font-medium">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                +20.1%
-              </div>
-              <span className="text-gray-500 text-sm ml-2">so so với tháng trước</span>
-            </div>
-            <Progress value={75} className="mt-3 h-2" />
-          </CardContent>
-        </Card>
 
-        <Card className="relative overflow-hidden bg-gradient-to-br from-white to-cyan-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#4DD0E1]/5 to-[#81C784]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-            <CardTitle className="text-sm font-medium text-gray-600">Đơn hàng có KM</CardTitle>
-            <div className="p-2 bg-gradient-to-r from-[#4DD0E1] to-[#81C784] rounded-lg">
-              <ShoppingCart className="h-4 w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-3xl font-bold bg-gradient-to-r from-[#4DD0E1] to-[#81C784] bg-clip-text text-transparent">
-              +2,350
-            </div>
-            <div className="flex items-center mt-2">
-              <div className="flex items-center text-emerald-600 text-sm font-medium">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                +180.1%
-              </div>
-              <span className="text-gray-500 text-sm ml-2">so với tháng trước</span>
-            </div>
-            <Progress value={85} className="mt-3 h-2" />
-          </CardContent>
-        </Card>
+            <Card className="relative overflow-hidden bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#001F54]/5 to-[#4DD0E1]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                <CardTitle className="text-sm font-medium text-gray-600">Tổng doanh thu từ khuyến mãi</CardTitle>
+                <div className="p-2 bg-gradient-to-r from-[#001F54] to-[#4DD0E1] rounded-lg">
+                  <DollarSign className="h-4 w-4 text-white" />
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold bg-gradient-to-r from-[#001F54] to-[#4DD0E1] bg-clip-text text-transparent">
+                  {overviewData.revenue.toLocaleString("vi-VN")}
+                </div>
+                <div className="flex items-center mt-2">
+                  <div className="flex items-center text-emerald-600 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    +20.1%
+                  </div>
+                  <span className="text-gray-500 text-sm ml-2">so so với tháng trước</span>
+                </div>
+                <Progress value={75} className="mt-3 h-2" />
+              </CardContent>
+            </Card>
 
-        <Card className="relative overflow-hidden bg-gradient-to-br from-white to-green-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#81C784]/5 to-[#4DD0E1]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-            <CardTitle className="text-sm font-medium text-gray-600">Tỷ lệ chuyển đổi</CardTitle>
-            <div className="p-2 bg-gradient-to-r from-[#81C784] to-[#4DD0E1] rounded-lg">
-              <Target className="h-4 w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-3xl font-bold bg-gradient-to-r from-[#81C784] to-[#4DD0E1] bg-clip-text text-transparent">
-              +12,234
-            </div>
-            <div className="flex items-center mt-2">
-              <div className="flex items-center text-emerald-600 text-sm font-medium">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                +19%
-              </div>
-              <span className="text-gray-500 text-sm ml-2">so với tháng trước</span>
-            </div>
-            <Progress value={65} className="mt-3 h-2" />
-          </CardContent>
-        </Card>
+            <Card className="relative overflow-hidden bg-gradient-to-br from-white to-cyan-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#4DD0E1]/5 to-[#81C784]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                <CardTitle className="text-sm font-medium text-gray-600">Đơn hàng có khuyến mãi</CardTitle>
+                <div className="p-2 bg-gradient-to-r from-[#4DD0E1] to-[#81C784] rounded-lg">
+                  <ShoppingCart className="h-4 w-4 text-white" />
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold bg-gradient-to-r from-[#4DD0E1] to-[#81C784] bg-clip-text text-transparent">
+                  {overviewData .order}
+                </div>
+                <div className="flex items-center mt-2">
+                  <div className="flex items-center text-emerald-600 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    +180.1%
+                  </div>
+                  <span className="text-gray-500 text-sm ml-2">so với tháng trước</span>
+                </div>
+                <Progress value={85} className="mt-3 h-2" />
+              </CardContent>
+            </Card>
 
-        <Card className="relative overflow-hidden bg-gradient-to-br from-white to-red-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
-          <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-            <CardTitle className="text-sm font-medium text-gray-600">Khách hàng mới</CardTitle>
-            <div className="p-2 bg-gradient-to-r from-[#4DD0E1] to-[#001F54] rounded-lg">
-              <Users className="h-4 w-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-3xl font-bold bg-gradient-to-r from-[#4DD0E1] to-[#001F54] bg-clip-text text-transparent">23</div>
-            <div className="flex items-center mt-2">
-              <div className="flex items-center text-cyan-500 text-sm font-medium">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                +1,245
-              </div>
-              <span className="text-gray-500 text-sm ml-2">Khách hàng mới</span>
-            </div>
-            <Progress value={30} className="mt-3 h-2" />
-          </CardContent>
-        </Card>
-        </div>        
+            <Card className="relative overflow-hidden bg-gradient-to-br from-white to-green-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#81C784]/5 to-[#4DD0E1]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                <CardTitle className="text-sm font-medium text-gray-600">Tỷ lệ chuyển đổi</CardTitle>
+                <div className="p-2 bg-gradient-to-r from-[#81C784] to-[#4DD0E1] rounded-lg">
+                  <Target className="h-4 w-4 text-white" />
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold bg-gradient-to-r from-[#81C784] to-[#4DD0E1] bg-clip-text text-transparent">
+                  {overviewData.conversionRate}
+                </div>
+                <div className="flex items-center mt-2">
+                  <div className="flex items-center text-emerald-600 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    +19%
+                  </div>
+                  <span className="text-gray-500 text-sm ml-2">so với tháng trước</span>
+                </div>
+                <Progress value={65} className="mt-3 h-2" />
+              </CardContent>
+            </Card>
 
-      
+            <Card className="relative overflow-hidden bg-gradient-to-br from-white to-red-50/30 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                <CardTitle className="text-sm font-medium text-gray-600">Khách hàng mới</CardTitle>
+                <div className="p-2 bg-gradient-to-r from-[#4DD0E1] to-[#001F54] rounded-lg">
+                  <Users className="h-4 w-4 text-white" />
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold bg-gradient-to-r from-[#4DD0E1] to-[#001F54] bg-clip-text text-transparent">{overviewData.newUser}</div>
+                <div className="flex items-center mt-2">
+                  <div className="flex items-center text-cyan-500 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    +1,245
+                  </div>
+                  <span className="text-gray-500 text-sm ml-2">Khách hàng mới</span>
+                </div>
+                <Progress value={30} className="mt-3 h-2" />
+              </CardContent>
+            </Card>
+          </div>
+
+
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 bg-gradient-to-br from-white to-blue-50/50 border-0 shadow-xl">

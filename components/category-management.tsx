@@ -290,8 +290,8 @@ export function CategoryManagement() {
                       <TableCell>
                         <div className="flex items-center space-x-3">
                           <ImageIcon
-                            src={category.image || "/placeholder.svg"}
-                            alt={category.name}
+                            // src={category.image || "/placeholder.svg"}
+                            // alt={category.name}
                             width={40}
                             height={40}
                             className="rounded-lg object-cover"
@@ -734,7 +734,7 @@ function CreateContentForm() {
         <Label htmlFor="contentBody" className="text-right mt-2">
           Nội dung
         </Label>
-        <Textarea id="contentBody" placeholder="Nhập nội dung..." className="col-span-3" rows={10} />
+        <Textarea id="contentBody" placeholder="Nhập nội dung..." className="col-span-3" rows={1000} />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="seoTitle" className="text-right">

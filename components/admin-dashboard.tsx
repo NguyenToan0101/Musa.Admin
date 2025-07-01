@@ -62,7 +62,7 @@ const menuItems = [
     title: "Quản lý Quyền",
     icon: Shield,
     id: "permissions",
-    description: "Admin, mod, quyền bán hàng",
+    description: "Admin, mod",
   },
   {
     title: "Quản lý Người dùng",
@@ -71,10 +71,10 @@ const menuItems = [
     description: "Danh sách, tìm kiếm, khóa tài khoản",
   },
   {
-    title: "Quản lý Sản phẩm",
+    title: "Quản lý Shop & Sản phẩm",
     icon: Package,
     id: "products",
-    description: "Duyệt, khóa, tìm kiếm sản phẩm",
+    description: "Thao tác với shop & sản phẩm",
   },
   {
     title: "Đơn hàng & Vận chuyển",
