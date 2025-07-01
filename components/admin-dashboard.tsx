@@ -233,7 +233,7 @@ export function AdminDashboard() {
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-[#001F54] to-[#4DD0E1] bg-clip-text text-transparent">
-                  E-Commerce Admin
+                  Musa Admin
                 </h1>
                 <p className="text-sm text-gray-500">Quản trị hệ thống</p>
               </div>

@@ -25,7 +25,7 @@ const handleLogin = async (e: React.FormEvent) => {
   setError("")
 
   try {
-    // Gửi dữ liệu đến Spring Boot backend
+    
      // Gửi dữ liệu đến Spring Boot backend
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/login`, {
       email, 
@@ -46,7 +46,7 @@ const handleLogin = async (e: React.FormEvent) => {
     if (error.response) {
       // Server trả về error response
       const errorData = error.response.data
-      setError(errorData.message || "Đăng nhập thất bại")
+      setError(errorData.message || "Email hoặc mật khẩu không đúng")
     } else if (error.request) {
       // Request được gửi nhưng không nhận được response
       setError("Lỗi kết nối. Vui lòng thử lại.")
