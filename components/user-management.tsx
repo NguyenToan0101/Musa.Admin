@@ -245,7 +245,6 @@ export function UserManagement() {
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Hoạt động</option>
               <option value="lock">Bị khóa</option>
-              <option value="PENDING_APPROVAL">Chờ duyệt</option>
             </select>
           </div>
         </CardContent>

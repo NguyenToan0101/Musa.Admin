@@ -1,5 +1,36 @@
 "use client"
 
+type Shop = {
+  shopId: number
+  shopName: string
+  manageName: string
+  businessAddress: string
+  createdAt: string
+  status: string
+  invoiceEmail?: string
+  phone?: string
+  businessType?: string
+  locked: boolean
+  lockedUntil?: string
+}
+
+type ShopDetailDTO = Shop & {
+  description: string
+  imageShop: string
+  taxCode: string
+  mainCategory: string
+  customerEmail: string
+  gender: string
+  dob: string
+  address: string
+  idNumber: string
+  frontIdImage: string
+  backIdImage: string
+  locked: boolean
+  lockedUntil?: string
+}
+
+import { ShopDetailModal } from "@/components/ShopDetailModal"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,8 +46,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, MoreHorizontal, Check, X, Lock, Eye, Trash2, Store, Package } from "lucide-react"
+import { Search, MoreHorizontal, Check, X, Lock, Unlock, Eye, Package, Store } from "lucide-react"
+
 import Image from "next/image"
+
+import axios from "axios"
+import { useEffect } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog"
+import DatePicker from "react-datepicker"
+
+
 
 function formatDate(dateStr: string | Date) {
   return new Date(dateStr).toLocaleDateString("vi-VN", {
@@ -31,9 +76,10 @@ export function ProductManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [filterCategory, setFilterCategory] = useState("all")
-
-
-  const products: any[] = [] // TODO: replace with fetched data
+  const [lockUntil, setLockUntil] = useState<Date | null>(null)
+  const [selectedShopToLock, setSelectedShopToLock] = useState<Shop | null>(null);
+  const [showLockModal, setShowLockModal] = useState(false);
+  const products: any[] = [] 
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
@@ -50,60 +96,145 @@ export function ProductManagement() {
   const [shopSearch, setShopSearch] = useState("")
   const [sortOrder, setSortOrder] = useState("desc") // hoặc "asc"
 
-
-  const [shops, setShops] = useState([
-    {
-      id: 1,
-      shopname: "TechZone",
-      sellerid: { username: "techadmin" },
-      businessAddress: "123 Lê Lợi, Hà Nội",
-      createdat: "2024-03-10T00:00:00Z",
-      invoiceEmail: "invoice@techzone.vn",
-      phone: "0909000001",
-      businessType: "Công ty TNHH",
-      status: "PENDING_APPROVAL"
-    },
-    {
-      id: 2,
-      shopname: "Thời Trang Trẻ",
-      sellerid: { username: "fashionqueen" },
-      businessAddress: "99 Nguyễn Huệ, TP.HCM",
-      createdat: "2024-02-05T00:00:00Z",
-      invoiceEmail: "contact@thoitrangtre.vn",
-      phone: "0909000002",
-      businessType: "Hộ kinh doanh",
-      status: "ACTIVE"
-    },
-    {
-      id: 3,
-      shopname: "Điện máy xanh",
-      sellerid: { username: "dienmayboss" },
-      businessAddress: "1A Cách Mạng Tháng 8, Cần Thơ",
-      createdat: "2024-01-01T00:00:00Z",
-      invoiceEmail: "sales@dienmayxanh.vn",
-      phone: "0909000003",
-      businessType: "Doanh nghiệp tư nhân",
-      status: "LOCK"
-    }
+  const [shops, setShops] = useState<Shop[]>([
   ])
 
+  useEffect(() => {
+    axios.get(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/shops`)
+      .then((res) => setShops(res.data))
+      .catch((err) => console.error("Lỗi khi lấy danh sách shop:", err))
+  }, [])
+
+
+
+
   const filteredShops = shops
-  .filter((shop) => {
-    const matchStatus = shopStatusFilter === "all" || shop.status === shopStatusFilter
-    const matchBusinessType = businessTypeFilter === "all" || shop.businessType === businessTypeFilter
-    const searchMatch =
-      shop.shopname.toLowerCase().includes(shopSearch.toLowerCase()) ||
-      shop.sellerid?.username.toLowerCase().includes(shopSearch.toLowerCase())
-    return matchStatus && matchBusinessType && searchMatch
-  })
-  .sort((a, b) => {
-    const dateA = new Date(a.createdat).getTime()
-    const dateB = new Date(b.createdat).getTime()
-    return sortOrder === "asc" ? dateA - dateB : dateB - dateA
-  })
+    .filter((shop) => {
+      const matchStatus = shopStatusFilter === "all" || shop.status === shopStatusFilter
+      const matchBusinessType = businessTypeFilter === "all" || shop.businessType === businessTypeFilter
+      const searchMatch =
+        shop.shopName.toLowerCase().includes(shopSearch.toLowerCase()) ||
+        shop.manageName?.toLowerCase().includes(shopSearch.toLowerCase())
+      return matchStatus && matchBusinessType && searchMatch
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime()
+      const dateB = new Date(b.createdAt).getTime()
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA
+    })
+
+  const [selectedShop, setSelectedShop] = useState<ShopDetailDTO | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+
+  function openDetail(shopId: number) {
+    setIsDetailOpen(true)
+    axios
+      .get<ShopDetailDTO>(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/shops/${shopId}`)
+      .then(res => setSelectedShop(res.data))
+      .catch(() => setIsDetailOpen(false))
+  }
+
+  //ham phe duyet
+  async function approveShop(shopId: number) {
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BACKEND}/admin/shops/${shopId}/approve`
+      );
+      // Cập nhật trạng thái trên UI
+      setShops(prev =>
+        prev.map(s =>
+          s.shopId === shopId ? { ...s, status: "ACTIVE" } : s
+        )
+      );
+    } catch (err) {
+      console.error("Lỗi phê duyệt shop:", err);
+    }
+  }
 
 
-  
+  //tu choi
+  async function rejectShop(shopId: number) {
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BACKEND}/admin/shops/${shopId}/reject`
+      );
+      // Cập nhật trạng thái trên UI
+      setShops(prev =>
+        prev.map(s =>
+          s.shopId === shopId ? { ...s, status: "REJECTED" } : s
+        )
+      );
+    } catch (err) {
+      console.error("Lỗi từ chối shop:", err);
+    }
+  }
+
+  //khoa shop
+  const handleConfirmLockShop = async () => {
+    if (!selectedShopToLock || !lockUntil) return;
+
+    const now = new Date();
+    const durationMinutes = Math.ceil((lockUntil.getTime() - now.getTime()) / (60 * 1000));
+
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BACKEND}/admin/shops/${selectedShopToLock.shopId}/lock`,
+        { durationMinutes },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      // cập nhật UI
+      setShops(prev =>
+        prev.map(s =>
+          s.shopId === selectedShopToLock!.shopId
+            ? {
+              ...s,
+              status: "LOCK",
+              locked: true,
+              lockedUntil: lockUntil!.toISOString(),
+            }
+            : s
+        )
+      );
+
+      setShowLockModal(false);
+      setSelectedShopToLock(null);
+      setLockUntil(null);
+
+    } catch (error) {
+      console.error("Lỗi khi khóa shop:", error);
+      alert("Khóa shop thất bại.");
+    }
+  };
+
+  //mo khoa
+  async function handleUnlockShop(shopId: number) {
+    try {
+      await axios.put(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/shops/${shopId}/unlock`);
+      setShops(prev =>
+        prev.map(s => s.shopId === shopId ? { ...s, locked: false, status: "ACTIVE" } : s)
+      );
+    } catch (err) {
+      console.error("Lỗi khi mở khóa shop:", err);
+      alert("Mở khóa shop thất bại.");
+    }
+  }
+
+  function openLockModal(shop: Shop) {
+    setSelectedShopToLock(shop);
+    setShowLockModal(true);
+  }
+
+  function handleLockUntilChange(
+    date: Date | Date[] | null,
+    _?: React.SyntheticEvent<any>
+  ) {
+    // nếu nó là mảng (dạng range) thì bỏ qua
+    if (Array.isArray(date) || date === null) return
+    // còn lại là 1 Date thì set
+    setLockUntil(date)
+  }
+
+
 
 
 
@@ -143,7 +274,7 @@ export function ProductManagement() {
                   />
                 </div>
 
-                
+
               </div>
 
               {/* <CardDescription>Hiển thị tất cả các shop trên hệ thống</CardDescription> */}
@@ -158,6 +289,7 @@ export function ProductManagement() {
                   <option value="all">Tất cả trạng thái</option>
                   <option value="ACTIVE">Hoạt động</option>
                   <option value="PENDING_APPROVAL">Chờ duyệt</option>
+                  <option value="REJECTED">Từ Chối</option>
                   <option value="LOCK">Bị khóa</option>
                 </select>
                 <select
@@ -196,23 +328,23 @@ export function ProductManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredShops.map((shop) => (
-                    <TableRow key={shop.id}>
+                    <TableRow key={shop.shopId}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 rounded-full bg-[#4DD0E1] flex items-center justify-center text-white font-bold">
-                            {shop.shopname.charAt(0).toUpperCase()}
+                            {shop.shopName.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-medium">{shop.shopname}</div>
+                            <div className="font-medium">{shop.shopName}</div>
                             <div className="text-sm text-gray-500">{shop.invoiceEmail}</div>
                             <div className="text-sm text-gray-500">{shop.phone}</div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{shop.sellerid?.username}</TableCell>
+                      <TableCell>{shop.manageName}</TableCell>
                       <TableCell>{shop.businessAddress}</TableCell>
                       <TableCell>{shop.businessType}</TableCell>
-                      <TableCell>{formatDate(shop.createdat)}</TableCell>
+                      <TableCell>{formatDate(shop.createdAt)}</TableCell>
                       <TableCell>
                         <Badge
                           className={
@@ -220,16 +352,21 @@ export function ProductManagement() {
                               ? "bg-[#81C784] text-white"
                               : shop.status === "PENDING_APPROVAL"
                                 ? "bg-yellow-500 text-white"
-                                : "bg-red-500 text-white"
+                                : shop.status === "REJECTED"
+                                  ? "bg-red-600 text-white"
+                                  : "bg-red-500 text-white"
                           }
                         >
                           {shop.status === "ACTIVE"
                             ? "Hoạt động"
                             : shop.status === "LOCK"
                               ? "Bị khóa"
-                              : "Chờ duyệt"}
+                              : shop.status === "REJECTED"
+                                ? "Từ chối"
+                                : "Chờ duyệt"}
                         </Badge>
                       </TableCell>
+
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -239,18 +376,84 @@ export function ProductManagement() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-                            <DropdownMenuItem>
+
+                            {/* Khi đang chờ duyệt */}
+                            {shop.status === "PENDING_APPROVAL" ? (
+                              <>
+                                <DropdownMenuItem onClick={() => approveShop(shop.shopId)}>
+                                  <Check className="mr-2 text-green-600" />
+                                  Phê duyệt
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => rejectShop(shop.shopId)}>
+                                  <X className="mr-2 text-red-600" />
+                                  Từ chối
+                                </DropdownMenuItem>
+                              </>
+                            ) : shop.locked ? (
+                              /* Khi đã bị khóa */
+                              <DropdownMenuItem onClick={() => handleUnlockShop(shop.shopId)}>
+                                <Unlock className="mr-2 text-green-600" />
+                                Mở khóa shop
+                              </DropdownMenuItem>
+                            ) : (
+                              /* Khi active bình thường */
+                              <DropdownMenuItem onClick={() => openLockModal(shop)}>
+                                <Lock className="mr-2 text-red-600" />
+                                Khóa shop
+                              </DropdownMenuItem>
+                            )}
+
+                            {/*  nút xem chi tiết */}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => openDetail(shop.shopId)}>
                               <Eye className="mr-2 h-4 w-4" />
                               Xem chi tiết
                             </DropdownMenuItem>
                           </DropdownMenuContent>
+
+
                         </DropdownMenu>
+
                       </TableCell>
                     </TableRow>
 
                   ))}
                 </TableBody>
               </Table>
+              <ShopDetailModal
+                shop={selectedShop}
+                open={isDetailOpen}
+                onOpenChange={setIsDetailOpen}
+              />
+
+              <Dialog open={showLockModal} onOpenChange={setShowLockModal}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Chọn thời gian khóa shop</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p>
+                      Khóa shop <strong>{selectedShopToLock?.shopName}</strong> đến:
+                    </p>
+                    <DatePicker
+                      selected={lockUntil}
+                      onChange={handleLockUntilChange}
+                      showTimeSelect
+                      dateFormat="Pp"
+                      className="w-full border px-2 py-1 rounded"
+                    />
+
+                    <Button
+                      className="bg-red-600 text-white"
+                      onClick={handleConfirmLockShop}
+                      disabled={!lockUntil}
+                    >
+                      Xác nhận khóa
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
             </CardContent>
           </Card>
         </div>
@@ -404,8 +607,8 @@ export function ProductManagement() {
                             <DropdownMenuSeparator />
                             {/* Tùy chọn theo status */}
                             <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Xóa sản phẩm
+                              {/* <Trash2 className="mr-2 h-4 w-4" />
+                              Xóa sản phẩm */}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
