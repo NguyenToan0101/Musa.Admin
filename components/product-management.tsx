@@ -158,7 +158,6 @@ export function ProductManagement() {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_BACKEND}/admin/shops/${shopId}/reject`
       );
-      // Cập nhật trạng thái trên UI
       setShops(prev =>
         prev.map(s =>
           s.shopId === shopId ? { ...s, status: "REJECTED" } : s

@@ -56,6 +56,17 @@ interface Content {
   updatedDate: string
 }
 
+interface ContentDetail {
+  contentid: number
+  title: string
+  slug: string
+  type: string
+  status: string
+  content: string
+  author: string
+  updatedDate: string
+}
+
 export function CategoryManagement() {
   // Tabs: Nội dung
   const [contentSearchTerm, setContentSearchTerm] = useState("")
@@ -69,39 +80,105 @@ export function CategoryManagement() {
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false)
   const [isCreateContentOpen, setIsCreateContentOpen] = useState(false)
 
+  //xem trước
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewContent, setPreviewContent] = useState<{ title: string; content: string } | null>(null)
+
+  const handlePreview = async (contentId: number) => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents/${contentId}`)
+      setPreviewContent({
+        title: res.data.title,
+        content: res.data.content
+      })
+      setIsPreviewOpen(true)
+    } catch (err) {
+      console.error("Lỗi khi load nội dung preview:", err)
+    }
+  }
+
+  //update
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editData, setEditData] = useState<ContentDetail | null>(null)
+
+  const handleEdit = async (id: number) => {
+    try {
+      const { data } = await axios.get<ContentDetail>(
+        `${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents/${id}`
+      )
+      setEditData(data)
+      setIsEditOpen(true)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  //xóa
+  const handleDelete = async (id: number) => {
+    if (!confirm("Bạn có chắc muốn xóa nội dung này không?")) return;
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents/${id}`);
+      // reload danh sách
+      fetchContents();
+      alert("Đã xóa thành công");
+    } catch (err) {
+      console.error("Lỗi khi xóa:", err);
+      alert("Xóa không thành công");
+    }
+  };
+
+  //published
+  const handlePublish = async (id: number) => {
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents/${id}/publish`,
+        null,
+        { params: { adminId: 1 } }  // hoặc lấy adminId động từ context/token
+      );
+      // reload lại danh sách
+      fetchContents();
+      alert("Đã xuất bản thành công");
+    } catch (err) {
+      console.error("Lỗi khi xuất bản:", err);
+      alert("Xuất bản không thành công");
+    }
+  };
+
+
+  //làm mới
+  const fetchContents = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents`, {
+        params: {
+          status: contentFilterStatus,
+          keyword: contentSearchTerm
+        }
+      })
+
+      const formatted: Content[] = res.data.map((c: any) => ({
+        contentId: c.contentId,
+        title: c.title,
+        slug: c.slug,
+        type: c.type,
+        status: c.status,
+        author: c.author,
+        updatedDate: format(new Date(c.updatedAt), "HH:mm dd/MM/yyyy")
+      }))
+
+      setContents(formatted)
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách nội dung:", err)
+    }
+  }
+
 
 
   useEffect(() => {
-    const fetchContents = async () => {
-      try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents`, {
-          params: {
-            status: contentFilterStatus,
-            keyword: contentSearchTerm
-          }
-        })
-
-        const formatted: Content[] = res.data.map((c: any) => ({
-          contentId: c.contentId,
-          title: c.title,
-          slug: c.slug,
-          type: c.type,
-          status: c.status,
-          author: c.author,
-          updatedDate: format(new Date(c.updatedAt), "HH:mm dd/MM/yyyy") // Format ở đây
-        }))
-
-        setContents(formatted)
-      } catch (err) {
-        console.error("Lỗi khi tải danh sách nội dung:", err)
-      }
-    }
-
     fetchContents()
   }, [contentSearchTerm, contentFilterStatus])
 
 
-
+  //lọc
   const filteredContents = contents.filter((content) => {
     const matchesStatus =
       contentFilterStatus === "all" || content.status === contentFilterStatus
@@ -213,7 +290,7 @@ export function CategoryManagement() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {content.type === "policy" ? "Chính sách" : content.type === "guide" ? "Hướng dẫn" : "Khác"}
+                          {content.type === "policy" ? "Chính sách" : content.type === "guide" ? "Hướng dẫn" : "Tin Tức"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -245,21 +322,23 @@ export function CategoryManagement() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handlePreview(content.contentId)}
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               Xem trước
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Chỉnh sửa
+                            <DropdownMenuItem onClick={() => handleEdit(content.contentId)}>
+                              <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Copy className="mr-2 h-4 w-4" />
-                              Sao chép
-                            </DropdownMenuItem>
+
+
                             <DropdownMenuSeparator />
                             {content.status === "draft" && (
-                              <DropdownMenuItem className="text-green-600">
+                              <DropdownMenuItem
+                                className="text-green-600"
+                                onClick={() => handlePublish(content.contentId)}
+                              >
                                 <Upload className="mr-2 h-4 w-4" />
                                 Xuất bản
                               </DropdownMenuItem>
@@ -270,7 +349,10 @@ export function CategoryManagement() {
                                 Lưu trữ
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDelete(content.contentId)}
+                            >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Xóa
                             </DropdownMenuItem>
@@ -281,6 +363,39 @@ export function CategoryManagement() {
                   ))}
                 </TableBody>
               </Table>
+              <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{previewContent?.title}</DialogTitle>
+                  </DialogHeader>
+                  <div
+                    className="prose max-h-[60vh] overflow-auto"
+                    dangerouslySetInnerHTML={{ __html: previewContent?.content || "" }}
+                  />
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
+                      Đóng
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Chỉnh sửa nội dung</DialogTitle>
+                  </DialogHeader>
+                  {editData && (
+                    <EditContentForm
+                      data={editData}
+                      onSuccess={() => {
+                        fetchContents()
+                        setIsEditOpen(false)
+                      }}
+                    />
+                  )}
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </TabsContent>
@@ -292,12 +407,12 @@ export function CategoryManagement() {
 
 
 
-
+//function tạo mới
 function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
   const [title, setTitle] = useState("")
   const [slug, setSlug] = useState("")
   const [type, setType] = useState("policy")
-  const [body, setBody] = useState("")
+  const [content, setContent] = useState("")
   const [status, setStatus] = useState("draft")
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -307,13 +422,13 @@ function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
         title,
         slug,
         type,
-        body,
+        content,
         status,
         adminId: 1
       })
 
       if (onSuccess) onSuccess()
-      alert("✅ Tạo nội dung thành công")
+      alert("Tạo nội dung thành công")
     } catch (error) {
       console.error("Lỗi khi tạo nội dung:", error)
       alert(" Đã xảy ra lỗi khi tạo nội dung")
@@ -343,7 +458,7 @@ function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
 
       <div className="grid grid-cols-4 items-start gap-4">
         <Label htmlFor="contentBody" className="text-right mt-2">Nội dung</Label>
-        <Textarea id="contentBody" value={body} onChange={(e) => setBody(e.target.value)} className="col-span-3" rows={8} />
+        <Textarea id="contentBody" value={content} onChange={(e) => setContent(e.target.value)} className="col-span-3" rows={8} />
       </div>
 
       <div className="grid grid-cols-4 items-center gap-4">
@@ -360,10 +475,87 @@ function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
           type="button"
           onClick={(e) => {
             setStatus("draft")
-            setTimeout(() => handleSubmit(e), 0) // delay 1 tick để chờ state cập nhật
+            setTimeout(() => handleSubmit(e), 0)
           }}
         >
-          Lưu 
+          Lưu
+        </Button>
+      </DialogFooter>
+    </form>
+  )
+}
+
+//function update
+function EditContentForm({
+  data,
+  onSuccess
+}: { data: ContentDetail; onSuccess: () => void }) {
+  const [title, setTitle] = useState(data.title)
+  const [slug, setSlug] = useState(data.slug)
+  const [type, setType] = useState(data.type)
+  const [content, setContent] = useState(data.content)
+  const [status, setStatus] = useState(data.status)
+  const {
+    contentid: id,
+    title: initialTitle,
+    slug: initialSlug,
+    type: initialType,
+    content: initialContent,
+    status: initialStatus
+  } = data
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await axios.put(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents/${id}`, {
+      title, slug, type, content, status, adminId: 1
+    })
+    onSuccess()
+
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="contentTitle" className="text-right">Tiêu đề</Label>
+        <Input id="contentTitle" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />
+      </div>
+
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="contentSlug" className="text-right">Slug</Label>
+        <Input id="contentSlug" value={slug} onChange={(e) => setSlug(e.target.value)} className="col-span-3" />
+      </div>
+
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="contentType" className="text-right">Loại nội dung</Label>
+        <select value={type} onChange={(e) => setType(e.target.value)} className="col-span-3 px-3 py-2 border rounded-md">
+          <option value="policy">Chính sách</option>
+          <option value="guide">Hướng dẫn</option>
+          <option value="news">Tin tức</option>
+        </select>
+      </div>
+
+      <div className="grid grid-cols-4 items-start gap-4">
+        <Label htmlFor="contentBody" className="text-right mt-2">Nội dung</Label>
+        <Textarea id="contentBody" value={content} onChange={(e) => setContent(e.target.value)} className="col-span-3" rows={8} />
+      </div>
+
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label className="text-right">Trạng thái</Label>
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className="col-span-3 px-3 py-2 border rounded-md">
+          <option value="draft">Bản nháp</option>
+          <option value="published">Xuất bản</option>
+        </select>
+      </div>
+
+      <DialogFooter>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={(e) => {
+            setStatus("draft")
+            setTimeout(() => handleSubmit(e), 0)
+          }}
+        >
+          Lưu
         </Button>
       </DialogFooter>
     </form>
