@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import axios from "axios"
 import {
   BarChart3,
   Users,
@@ -117,6 +118,20 @@ const menuItems = [
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  const [allowedTabs, setAllowedTabs] = useState<string[]>([])
+
+  const currentAdminId = 1
+  const apiBase = process.env.NEXT_PUBLIC_API_BACKEND
+
+
+  useEffect(() => {
+    axios
+      .get<string[]>(`${apiBase}/api/admin/permissions/${currentAdminId}`)
+      .then(res => setAllowedTabs(res.data))
+      .catch(() => setAllowedTabs(menuItems.map(m => m.id)))
+  }, [apiBase])
+
 
   const renderContent = () => {
     switch (activeTab) {
@@ -265,15 +280,10 @@ export function AdminDashboard() {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Admin User</p>
-                    <p className="text-xs leading-none text-muted-foreground">admin@ecommerce.vn</p>
+                    {/* <p className="text-sm font-medium leading-none">Admin User</p> */}
+                    {/* <p className="text-xs leading-none text-muted-foreground">admin@ecommerce.vn</p> */}
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Hồ sơ cá nhân</DropdownMenuItem>
-                <DropdownMenuItem>Cài đặt</DropdownMenuItem>
-                <DropdownMenuItem>Hỗ trợ</DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem>Đăng xuất</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -282,66 +292,53 @@ export function AdminDashboard() {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
         <aside
-          className={`${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } fixed inset-y-0 left-0 z-40 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 mt-[73px] lg:mt-0`}
+          className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            } fixed inset-y-0 left-0 z-40 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 mt-[73px] lg:mt-0`}
         >
           <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto py-6">
               <nav className="px-4 space-y-2">
-                {menuItems.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 group ${
-                        activeTab === item.id
-                          ? "bg-gradient-to-r from-[#001F54] to-[#4DD0E1] text-white shadow-lg"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-[#001F54]"
-                      }`}
-                    >
-                      <Icon
-                        className={`w-5 h-5 mr-3 ${
-                          activeTab === item.id ? "text-white" : "text-gray-500 group-hover:text-[#001F54]"
-                        }`}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{item.title}</div>
-                        <div className={`text-xs ${activeTab === item.id ? "text-gray-200" : "text-gray-500"}`}>
-                          {item.description}
+                {menuItems
+                  .filter(item => allowedTabs.includes(item.id))
+                  .map(item => {
+                    const Icon = item.icon
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 group ${activeTab === item.id
+                            ? "bg-gradient-to-r from-[#001F54] to-[#4DD0E1] text-white shadow-lg"
+                            : "text-gray-700 hover:bg-gray-100 hover:text-[#001F54]"
+                          }`}
+                      >
+                        <Icon
+                          className={`w-5 h-5 mr-3 ${activeTab === item.id
+                              ? "text-white"
+                              : "text-gray-500 group-hover:text-[#001F54]"
+                            }`}
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{item.title}</div>
+                          <div className={`text-xs ${activeTab === item.id ? "text-gray-200" : "text-gray-500"}`}>
+                            {item.description}
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  )
-                })}
+                      </button>
+                    )
+                  })}
               </nav>
             </div>
-
-            <div className="p-4 border-t border-gray-200">
-              <div className="bg-gradient-to-r from-[#001F54] to-[#4DD0E1] rounded-lg p-4 text-white">
-                <h3 className="font-medium mb-2">Cần hỗ trợ?</h3>
-                <p className="text-sm text-gray-200 mb-3">Liên hệ team kỹ thuật</p>
-                <Button variant="secondary" size="sm" className="w-full">
-                  Liên hệ hỗ trợ
-                </Button>
-              </div>
-            </div>
+            <div className="p-4 border-t border-gray-200">…</div>
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 lg:ml-0">
           <div className="p-6">{renderContent()}</div>
         </main>
       </div>
 
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+      {sidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
     </div>
   )
 }
