@@ -119,20 +119,52 @@ export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
-  const [allowedTabs, setAllowedTabs] = useState<string[]>([])
 
-  const currentAdminId = 1
-  const apiBase = process.env.NEXT_PUBLIC_API_BACKEND
 
+  const [currentAdminId, setCurrentAdminId] = useState<number | null>(null);
+  const [allowedTabs, setAllowedTabs] = useState<string[]>([]);
 
   useEffect(() => {
     axios
-      .get<string[]>(`${apiBase}/api/admin/permissions/${currentAdminId}`)
-      .then(res => setAllowedTabs(res.data))
-      .catch(() => setAllowedTabs(menuItems.map(m => m.id)))
-  }, [apiBase])
+      .get(`${process.env.NEXT_PUBLIC_API_BACKEND}/api/admin/me`)
+      .then(res => setCurrentAdminId(res.data.adminid))
+      .catch(() => setCurrentAdminId(1));
+  }, []);
+
+  useEffect(() => {
+    if (currentAdminId !== null) {
+      if (currentAdminId === 1) {
+        setAllowedTabs(menuItems.map(m => m.id));
+      } else {
+        axios
+          .get<string[]>(`${process.env.NEXT_PUBLIC_API_BACKEND}/api/admin/permissions/${currentAdminId}`)
+          .then(res => {
+            console.log("API permissions response:", res.data);
+            setAllowedTabs(res.data);
+          })
+          .catch(() => setAllowedTabs([]));
+      }
+    }
+  }, [currentAdminId]);
+
+  useEffect(() => {
+  console.log("currentAdminId:", currentAdminId);
+}, [currentAdminId]);
 
 
+//log
+  console.log("Rendering sidebar with allowedTabs:", allowedTabs);
+  menuItems.forEach(item => {
+    console.log(`menuItem id: "${item.id}", included:`, allowedTabs.includes(item.id));
+  });
+
+  allowedTabs.forEach(tab => {
+    menuItems.forEach(item => {
+      if (item.id.trim().toLowerCase() === tab.trim().toLowerCase()) {
+        console.log(`MATCH: "${item.id}" == "${tab}"`);
+      }
+    });
+  });
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -233,6 +265,17 @@ export function AdminDashboard() {
     }
   }
 
+  useEffect(() => {
+    console.log("allowedTabs:", allowedTabs);
+    console.log("menuItems ids:", menuItems.map(m => m.id));
+    if (allowedTabs && allowedTabs.length > 0) {
+      allowedTabs.forEach(tab => {
+        const found = menuItems.some(m => m.id === tab);
+        console.log(`allowedTab "${tab}" match menuItems:`, found);
+      });
+    }
+  }, [allowedTabs]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
@@ -308,14 +351,14 @@ export function AdminDashboard() {
                         key={item.id}
                         onClick={() => setActiveTab(item.id)}
                         className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 group ${activeTab === item.id
-                            ? "bg-gradient-to-r from-[#001F54] to-[#4DD0E1] text-white shadow-lg"
-                            : "text-gray-700 hover:bg-gray-100 hover:text-[#001F54]"
+                          ? "bg-gradient-to-r from-[#001F54] to-[#4DD0E1] text-white shadow-lg"
+                          : "text-gray-700 hover:bg-gray-100 hover:text-[#001F54]"
                           }`}
                       >
                         <Icon
                           className={`w-5 h-5 mr-3 ${activeTab === item.id
-                              ? "text-white"
-                              : "text-gray-500 group-hover:text-[#001F54]"
+                            ? "text-white"
+                            : "text-gray-500 group-hover:text-[#001F54]"
                             }`}
                         />
                         <div className="flex-1">
