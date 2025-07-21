@@ -1,666 +1,468 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
+import axios from "axios"
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Table,
+  TableHeader,
+  TableHead,
+  TableRow,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs"
 import {
   Dialog,
+  DialogTrigger,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
 import {
-  Search,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import {
   MoreHorizontal,
-  Plus,
-  Edit,
-  Trash2,
-  Shield,
-  Users,
+  Users as UsersIcon,
   Key,
-  Eye,
-  UserPlus,
-  Lock,
-  Unlock,
-  Crown,
-  Star,
+  Edit,
+  Lock as LockIcon,
+  Unlock as UnlockIcon,
+  Trash2,
 } from "lucide-react"
 
-// Dữ liệu mẫu cho vai trò
-const roles = [
-  {
-    id: "ROLE001",
-    name: "Super Admin",
-    description: "Quyền cao nhất, quản lý toàn bộ hệ thống",
-    level: 1,
-    usersCount: 2,
-    permissions: ["all"],
-    color: "bg-red-500",
-    createdDate: "2024-01-01",
-  },
-  {
-    id: "ROLE002",
-    name: "Admin",
-    description: "Quản lý hệ thống, không thể thay đổi cài đặt bảo mật",
-    level: 2,
-    usersCount: 5,
-    permissions: ["dashboard", "users", "products", "orders", "categories", "promotions"],
-    color: "bg-blue-500",
-    createdDate: "2024-01-15",
-  },
-  {
-    id: "ROLE003",
-    name: "Moderator",
-    description: "Kiểm duyệt nội dung, quản lý khiếu nại",
-    level: 3,
-    usersCount: 8,
-    permissions: ["dashboard", "products", "complaints", "content"],
-    color: "bg-green-500",
-    createdDate: "2024-02-01",
-  },
-  {
-    id: "ROLE004",
-    name: "Sales Manager",
-    description: "Quản lý bán hàng, theo dõi đơn hàng và khuyến mãi",
-    level: 4,
-    usersCount: 12,
-    permissions: ["dashboard", "orders", "promotions", "analytics"],
-    color: "bg-orange-500",
-    createdDate: "2024-02-15",
-  },
-  {
-    id: "ROLE005",
-    name: "Customer Support",
-    description: "Hỗ trợ khách hàng, xử lý khiếu nại",
-    level: 5,
-    usersCount: 15,
-    permissions: ["dashboard", "complaints", "messages", "users_view"],
-    color: "bg-purple-500",
-    createdDate: "2024-03-01",
-  },
+interface AdminUser {
+  adminid: number
+  fullname: string
+  email: string
+  phone: string
+  role: string
+  status: string
+  lastLogin: string
+  createdAt: string
+}
+
+const ALL_TABS = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "analytics", label: "Thống kê & Báo cáo" },
+  { id: "permissions", label: "Quản lý Quyền" },
+  { id: "users", label: "Quản lý Người dùng" },
+  { id: "products", label: "Quản lý Shop & Sản phẩm" },
+  { id: "orders", label: "Đơn hàng & Vận chuyển" },
+  { id: "categories", label: "Danh mục & Nội dung" },
+  { id: "promotions", label: "Khuyến mãi" },
+  { id: "complaints", label: "Khiếu nại & Phản hồi" },
+  { id: "messages", label: "Trung tâm Tin nhắn" },
+  { id: "settings", label: "Cài đặt Hệ thống" },
 ]
 
-// Dữ liệu mẫu cho người dùng có quyền
-const adminUsers = [
-  {
-    id: "USER001",
-    name: "Nguyễn Văn Admin",
-    email: "admin@ecommerce.vn",
-    phone: "0123456789",
-    avatar: "/placeholder.svg",
-    role: "Super Admin",
-    roleId: "ROLE001",
-    status: "active",
-    lastLogin: "2024-03-20 14:30",
-    createdDate: "2024-01-01",
-    permissions: ["all"],
-  },
-  {
-    id: "USER002",
-    name: "Trần Thị Manager",
-    email: "manager@ecommerce.vn",
-    phone: "0987654321",
-    avatar: "/placeholder.svg",
-    role: "Admin",
-    roleId: "ROLE002",
-    status: "active",
-    lastLogin: "2024-03-20 10:15",
-    createdDate: "2024-01-15",
-    permissions: ["dashboard", "users", "products", "orders"],
-  },
-  {
-    id: "USER003",
-    name: "Lê Văn Moderator",
-    email: "mod@ecommerce.vn",
-    phone: "0456789123",
-    avatar: "/placeholder.svg",
-    role: "Moderator",
-    roleId: "ROLE003",
-    status: "active",
-    lastLogin: "2024-03-19 16:45",
-    createdDate: "2024-02-01",
-    permissions: ["dashboard", "products", "complaints"],
-  },
-  {
-    id: "USER004",
-    name: "Phạm Thị Sales",
-    email: "sales@ecommerce.vn",
-    phone: "0789123456",
-    avatar: "/placeholder.svg",
-    role: "Sales Manager",
-    roleId: "ROLE004",
-    status: "inactive",
-    lastLogin: "2024-03-18 09:20",
-    createdDate: "2024-02-15",
-    permissions: ["dashboard", "orders", "promotions"],
-  },
-]
-
-// Danh sách quyền có thể có
-const availablePermissions = [
-  { id: "dashboard", name: "Dashboard", description: "Xem trang tổng quan" },
-  { id: "users", name: "Quản lý người dùng", description: "Thêm, sửa, xóa người dùng" },
-  { id: "users_view", name: "Xem người dùng", description: "Chỉ xem thông tin người dùng" },
-  { id: "products", name: "Quản lý sản phẩm", description: "Thêm, sửa, xóa sản phẩm" },
-  { id: "orders", name: "Quản lý đơn hàng", description: "Xem và xử lý đơn hàng" },
-  { id: "categories", name: "Quản lý danh mục", description: "Thêm, sửa, xóa danh mục" },
-  { id: "promotions", name: "Quản lý khuyến mãi", description: "Tạo và quản lý khuyến mãi" },
-  { id: "complaints", name: "Quản lý khiếu nại", description: "Xử lý khiếu nại khách hàng" },
-  { id: "messages", name: "Tin nhắn", description: "Gửi và nhận tin nhắn" },
-  { id: "analytics", name: "Thống kê báo cáo", description: "Xem báo cáo và thống kê" },
-  { id: "settings", name: "Cài đặt hệ thống", description: "Thay đổi cài đặt hệ thống" },
-  { id: "security", name: "Bảo mật", description: "Quản lý bảo mật hệ thống" },
-]
+function formatDate(dateString: string): string {
+  const d = new Date(dateString)
+  const hh = String(d.getHours()).padStart(2, "0")
+  const mm = String(d.getMinutes()).padStart(2, "0")
+  const dd = String(d.getDate()).padStart(2, "0")
+  const mo = String(d.getMonth() + 1).padStart(2, "0")
+  const yy = d.getFullYear()
+  return `${hh}:${mm} ${dd}/${mo}/${yy}`
+}
 
 export function PermissionManagement() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterRole, setFilterRole] = useState("all")
-  const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false)
-  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false)
+  const api = process.env.NEXT_PUBLIC_API_BACKEND!
 
-  const filteredUsers = adminUsers.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = filterRole === "all" || user.roleId === filterRole
-    return matchesSearch && matchesRole
+  const [admins, setAdmins] = useState<AdminUser[]>([])
+  const [search, setSearch] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const [openCreate, setOpenCreate] = useState(false)
+  const [newMod, setNewMod] = useState({
+    fullname: "",
+    email: "",
+    phone: "",
+    password: "",
   })
-    //  const [email, setEmail] = useState("");
-      console.log("-----------Email", localStorage.getItem("adminEmail"));
-    
-     useEffect(() => {
-        if (typeof window !== "undefined") {
-          const storedEmail = localStorage.getItem("adminEmail");
-          console.log("-----------Email from localStorage", storedEmail);
-          // if (storedEmail) {
-          //   setEmail(storedEmail);
-          // }
-        }
-      }, []);
-    
-    //   useEffect(() => {
-    //     // Theo dõi khi email thực sự thay đổi
-    //     if (email) {
-    //       console.log("-----------Updated email state:", email);
-    //     }
-    //   }, [email]);
+
+  const [activeTab, setActiveTab] = useState<"users" | "permissions">("users")
+  const [selectedForPerm, setSelectedForPerm] = useState<number | null>(null)
+  const [allowedTabs, setAllowedTabs] = useState<string[]>([])
+
+  // load list of mods
+  useEffect(() => {
+    setLoading(true)
+    axios
+      .get<AdminUser[]>(`${api}/api/admin/admins`)
+      .then(res =>
+        setAdmins(res.data.filter(u => u.adminid !== 1))
+      )
+      .catch(() => setError("Không tải được danh sách"))
+      .finally(() => setLoading(false))
+  }, [api])
+
+  // load permissions when switching to permissions tab
+  useEffect(() => {
+    if (activeTab === "permissions" && selectedForPerm) {
+      axios
+        .get<string[]>(
+          `${api}/api/admin/permissions/${selectedForPerm}`
+        )
+        .then(res => setAllowedTabs(res.data))
+        .catch(() => setAllowedTabs([]))
+    }
+  }, [activeTab, selectedForPerm, api])
+
+  const filteredAdmins = admins.filter(u =>
+    u.fullname.toLowerCase().includes(search.toLowerCase()) ||
+    u.email.toLowerCase().includes(search.toLowerCase()) ||
+    u.phone.includes(search)
+  )
+
+  // create new mod
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const res = await axios.post<AdminUser>(
+        `${api}/api/admin/admins`,
+        newMod
+      )
+      setAdmins(prev => [...prev, res.data])
+      setOpenCreate(false)
+      setNewMod({ fullname: "", email: "", phone: "", password: "" })
+    } catch {
+      alert("Tạo Mod thất bại")
+    }
+  }
+
+  // lock/unlock
+  const toggleLock = async (id: number, lock: boolean) => {
+    try {
+      if (lock) {
+        await axios.put(`${api}/api/admin/admins/${id}/lock`)
+      } else {
+        await axios.put(`${api}/api/admin/admins/${id}/unlock`)
+      }
+      setAdmins(prev =>
+        prev.map(u =>
+          u.adminid === id ? { ...u, status: lock ? "locked" : "active" } : u
+        )
+      )
+    } catch {
+      alert(lock ? "Khóa Mod thất bại" : "Mở khóa Mod thất bại")
+    }
+  }
+
+  // delete mod
+  const handleDeleteMod = async (id: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa Mod này?")) return
+    try {
+      await axios.delete(`${api}/api/admin/admins/${id}`)
+      setAdmins(prev => prev.filter(u => u.adminid !== id))
+    } catch {
+      alert("Xóa Mod thất bại")
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#001F54] to-[#4DD0E1] bg-clip-text text-transparent">
-            Quản lý Quyền Tài khoản
-          </h1>
-          <p className="text-gray-500 mt-1">Phân quyền và quản lý tài khoản admin, moderator</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge className="bg-red-100 text-red-800">
-            {adminUsers.filter((u) => u.role === "Super Admin").length} Super Admin
-          </Badge>
-          <Badge className="bg-blue-100 text-blue-800">
-            {adminUsers.filter((u) => u.role === "Admin").length} Admin
-          </Badge>
-          <Badge className="bg-green-100 text-green-800">
-            {adminUsers.filter((u) => u.role === "Moderator").length} Moderator
-          </Badge>
+      {/* Header & Thêm Mod */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Quản lý Mod</h1>
+        <div className="flex items-center space-x-4">
+          <Input
+            placeholder="Tìm kiếm..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-64"
+          />
+          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+            <DialogTrigger asChild>
+              <Button>Thêm Mod</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Tạo Mod mới</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <Input
+                  required
+                  placeholder="Họ và tên"
+                  value={newMod.fullname}
+                  onChange={e =>
+                    setNewMod({ ...newMod, fullname: e.target.value })
+                  }
+                />
+                <Input
+                  type="email"
+                  required
+                  placeholder="Email"
+                  value={newMod.email}
+                  onChange={e =>
+                    setNewMod({ ...newMod, email: e.target.value })
+                  }
+                />
+                <Input
+                  required
+                  placeholder="Điện thoại"
+                  value={newMod.phone}
+                  onChange={e =>
+                    setNewMod({ ...newMod, phone: e.target.value })
+                  }
+                />
+                <Input
+                  type="password"
+                  required
+                  placeholder="Mật khẩu tạm thời"
+                  value={newMod.password}
+                  onChange={e =>
+                    setNewMod({ ...newMod, password: e.target.value })
+                  }
+                />
+                <DialogFooter>
+                  <Button type="submit">Tạo</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg">
-          <TabsTrigger value="users" className="data-[state=active]:bg-[#001F54] data-[state=active]:text-white">
-            <Users className="w-4 h-4 mr-2" />
-            Người dùng
+      {/* Tabs */}
+      <Tabs
+        value={activeTab}
+        onValueChange={val =>
+          setActiveTab(val as "users" | "permissions")
+        }
+      >
+        <TabsList className="grid w-full grid-cols-2 bg-white shadow-md rounded-md">
+          <TabsTrigger
+            value="users"
+            className="data-[state=active]:bg-[#001F54] data-[state=active]:text-white"
+          >
+            <UsersIcon className="inline mr-2" /> Người dùng
           </TabsTrigger>
-          <TabsTrigger value="roles" className="data-[state=active]:bg-[#4DD0E1] data-[state=active]:text-white">
-            <Shield className="w-4 h-4 mr-2" />
-            Vai trò
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="data-[state=active]:bg-[#81C784] data-[state=active]:text-white">
-            <Key className="w-4 h-4 mr-2" />
-            Quyền hạn
+          <TabsTrigger
+            value="permissions"
+            className="data-[state=active]:bg-[#4DD0E1] data-[state=active]:text-white"
+          >
+            <Key className="inline mr-2" /> Quyền hạn
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab Người dùng */}
-        <TabsContent value="users" className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Tìm kiếm người dùng..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-80"
-                />
-              </div>
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4DD0E1]"
-              >
-                <option value="all">Tất cả vai trò</option>
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-[#001F54] hover:bg-[#001F54]/90">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Thêm người dùng
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Thêm người dùng mới</DialogTitle>
-                  <DialogDescription>Tạo tài khoản admin/moderator mới</DialogDescription>
-                </DialogHeader>
-                <CreateUserForm />
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Danh sách Người dùng có Quyền</CardTitle>
-              <CardDescription>Tổng cộng {filteredUsers.length} người dùng</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Người dùng</TableHead>
-                    <TableHead>Vai trò</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead>Đăng nhập cuối</TableHead>
-                    <TableHead>Ngày tạo</TableHead>
-                    <TableHead className="text-right">Hành động</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                            <AvatarFallback className="bg-[#4DD0E1] text-white">{user.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium flex items-center space-x-2">
-                              <span>{user.name}</span>
-                              {user.role === "Super Admin" && <Crown className="w-4 h-4 text-yellow-500" />}
-                              {user.role === "Admin" && <Star className="w-4 h-4 text-blue-500" />}
-                            </div>
-                            <div className="text-sm text-gray-500">{user.email}</div>
-                            <div className="text-sm text-gray-500">{user.phone}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            user.role === "Super Admin"
-                              ? "bg-red-500 text-white"
-                              : user.role === "Admin"
-                                ? "bg-blue-500 text-white"
-                                : user.role === "Moderator"
-                                  ? "bg-green-500 text-white"
-                                  : user.role === "Sales Manager"
-                                    ? "bg-orange-500 text-white"
-                                    : "bg-purple-500 text-white"
-                          }
-                        >
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={user.status === "active" ? "default" : "secondary"}
-                          className={user.status === "active" ? "bg-[#81C784] text-white" : ""}
-                        >
-                          {user.status === "active" ? "Hoạt động" : "Không hoạt động"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{user.lastLogin}</div>
-                      </TableCell>
-                      <TableCell>{user.createdDate}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <Eye className="mr-2 h-4 w-4" />
-                              Xem chi tiết
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Chỉnh sửa
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Key className="mr-2 h-4 w-4" />
-                              Đổi quyền
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {user.status === "active" ? (
-                              <DropdownMenuItem className="text-orange-600">
-                                <Lock className="mr-2 h-4 w-4" />
-                                Vô hiệu hóa
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem className="text-green-600">
-                                <Unlock className="mr-2 h-4 w-4" />
-                                Kích hoạt
-                              </DropdownMenuItem>
-                            )}
-                            {user.role !== "Super Admin" && (
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Xóa tài khoản
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+        {/* Danh sách Mods */}
+        <TabsContent value="users">
+          {loading ? (
+            <div>Đang tải…</div>
+          ) : error ? (
+            <div className="text-red-600">{error}</div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Danh sách Mod</CardTitle>
+                <CardDescription>
+                  Tổng {filteredAdmins.length} tài khoản
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Họ & tên</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Điện thoại</TableHead>
+                      <TableHead>Quyền</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead>Đăng nhập cuối</TableHead>
+                      <TableHead>Ngày tạo</TableHead>
+                      <TableHead className="text-right">
+                        Hành động
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab Vai trò */}
-        <TabsContent value="roles" className="space-y-6">
-          <div className="flex justify-end">
-            <Dialog open={isCreateRoleOpen} onOpenChange={setIsCreateRoleOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-[#4DD0E1] hover:bg-[#4DD0E1]/90">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Tạo vai trò mới
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl">
-                <DialogHeader>
-                  <DialogTitle>Tạo vai trò mới</DialogTitle>
-                  <DialogDescription>Định nghĩa vai trò và quyền hạn mới</DialogDescription>
-                </DialogHeader>
-                <CreateRoleForm />
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {roles.map((role) => (
-              <Card key={role.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-4 h-4 rounded-full ${role.color}`} />
-                      <CardTitle className="text-lg">{role.name}</CardTitle>
-                    </div>
-                    <Badge variant="outline">Cấp {role.level}</Badge>
-                  </div>
-                  <CardDescription>{role.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Số người dùng:</span>
-                      <span className="font-medium">{role.usersCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Số quyền:</span>
-                      <span className="font-medium">
-                        {role.permissions.includes("all") ? "Tất cả" : role.permissions.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Ngày tạo:</span>
-                      <span className="font-medium">{role.createdDate}</span>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Edit className="mr-2 h-3 w-3" />
-                        Sửa
-                      </Button>
-                      {role.name !== "Super Admin" && (
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Tab Quyền hạn */}
-        <TabsContent value="permissions" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ma trận Quyền hạn</CardTitle>
-              <CardDescription>Xem và quản lý quyền hạn theo vai trò</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-4 font-medium">Quyền hạn</th>
-                      {roles.map((role) => (
-                        <th key={role.id} className="text-center p-4 font-medium min-w-[120px]">
-                          <div className="flex flex-col items-center space-y-1">
-                            <div className={`w-3 h-3 rounded-full ${role.color}`} />
-                            <span className="text-xs">{role.name}</span>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAdmins.map(u => (
+                      <TableRow key={u.adminid}>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Avatar>
+                              <AvatarFallback>
+                                {u.fullname.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            {u.fullname}
                           </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {availablePermissions.map((permission) => (
-                      <tr key={permission.id} className="border-b hover:bg-gray-50">
-                        <td className="p-4">
-                          <div>
-                            <div className="font-medium">{permission.name}</div>
-                            <div className="text-sm text-gray-500">{permission.description}</div>
-                          </div>
-                        </td>
-                        {roles.map((role) => (
-                          <td key={`${role.id}-${permission.id}`} className="text-center p-4">
-                            <Checkbox
-                              checked={role.permissions.includes("all") || role.permissions.includes(permission.id)}
-                              disabled={role.permissions.includes("all")}
-                              className="mx-auto"
-                            />
-                          </td>
-                        ))}
-                      </tr>
+                        </TableCell>
+                        <TableCell>{u.email}</TableCell>
+                        <TableCell>{u.phone}</TableCell>
+                        <TableCell>
+                          <Badge>{u.role}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              u.status === "active"
+                                ? "default"
+                                : "destructive"
+                            }
+                          >
+                            {u.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(u.lastLogin)}</TableCell>
+                        <TableCell>{formatDate(u.createdAt)}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>
+                                Hành động
+                              </DropdownMenuLabel>
+
+                              {u.status === "active" ? (
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() =>
+                                    toggleLock(u.adminid, true)
+                                  }
+                                >
+                                  <LockIcon className="mr-2 h-4 w-4" />
+                                  Khóa Mod
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  className="text-green-600"
+                                  onClick={() =>
+                                    toggleLock(u.adminid, false)
+                                  }
+                                >
+                                  <UnlockIcon className="mr-2 h-4 w-4" />
+                                  Mở khóa Mod
+                                </DropdownMenuItem>
+                              )}
+
+                              <DropdownMenuSeparator />
+
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedForPerm(u.adminid)
+                                  setActiveTab("permissions")
+                                }}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Phân quyền
+                              </DropdownMenuItem>
+
+                              <DropdownMenuSeparator />
+
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() =>
+                                  handleDeleteMod(u.adminid)
+                                }
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Xóa Mod
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Nhật ký Phân quyền</CardTitle>
-              <CardDescription>Lịch sử thay đổi quyền hạn</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <div>
-                      <p className="font-medium">Cấp quyền Admin cho Trần Thị Manager</p>
-                      <p className="text-sm text-gray-500">Bởi: Nguyễn Văn Admin</p>
-                    </div>
+        {/* Phân quyền */}
+        <TabsContent value="permissions">
+          {!selectedForPerm ? (
+            <div className="p-4 text-gray-600">
+              Chọn một Mod ở tab “Người dùng” để phân quyền
+            </div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  Phân quyền Mod #{selectedForPerm}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {ALL_TABS.map(tab => (
+                  <div
+                    key={tab.id}
+                    className="flex items-center"
+                  >
+                    <input
+                      id={tab.id}
+                      type="checkbox"
+                      checked={allowedTabs.includes(tab.id)}
+                      onChange={() => {
+                        setAllowedTabs(prev =>
+                          prev.includes(tab.id)
+                            ? prev.filter(t => t !== tab.id)
+                            : [...prev, tab.id]
+                        )
+                      }}
+                      className="mr-2"
+                    />
+                    <label htmlFor={tab.id}>
+                      {tab.label}
+                    </label>
                   </div>
-                  <span className="text-sm text-gray-500">2 giờ trước</span>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                    <div>
-                      <p className="font-medium">Thay đổi quyền cho vai trò Moderator</p>
-                      <p className="text-sm text-gray-500">Bởi: Nguyễn Văn Admin</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-500">1 ngày trước</span>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full" />
-                    <div>
-                      <p className="font-medium">Thu hồi quyền Admin của Lê Văn Test</p>
-                      <p className="text-sm text-gray-500">Bởi: Nguyễn Văn Admin</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-500">3 ngày trước</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                ))}
+              </CardContent>
+              <CardFooter>
+                <Button
+                  onClick={() =>
+                    axios
+                      .put<string[]>(
+                        `${api}/api/admin/permissions/${selectedForPerm}`,
+                        allowedTabs
+                      )
+                      .then(res => {
+                        setAllowedTabs(res.data)
+                        alert("Lưu thành công!")
+                      })
+                      .catch(() => alert("Lưu thất bại!"))
+                  }
+                >
+                  Lưu thay đổi
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
-    </div>
-  )
-}
-
-function CreateUserForm() {
-  return (
-    <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="userName" className="text-right">
-          Họ và tên
-        </Label>
-        <Input id="userName" placeholder="Nhập họ và tên" className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="userEmail" className="text-right">
-          Email
-        </Label>
-        <Input id="userEmail" type="email" placeholder="email@example.com" className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="userPhone" className="text-right">
-          Số điện thoại
-        </Label>
-        <Input id="userPhone" placeholder="0123456789" className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="userPassword" className="text-right">
-          Mật khẩu
-        </Label>
-        <Input id="userPassword" type="password" placeholder="Mật khẩu tạm thời" className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="userRole" className="text-right">
-          Vai trò
-        </Label>
-        <select className="col-span-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4DD0E1]">
-          {roles
-            .filter((role) => role.name !== "Super Admin")
-            .map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.name}
-              </option>
-            ))}
-        </select>
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label className="text-right">Trạng thái</Label>
-        <div className="col-span-3 flex items-center space-x-2">
-          <Switch defaultChecked />
-          <span className="text-sm">Hoạt động</span>
-        </div>
-      </div>
-      <DialogFooter>
-        <Button type="submit" className="bg-[#001F54] hover:bg-[#001F54]/90">
-          Tạo tài khoản
-        </Button>
-      </DialogFooter>
-    </div>
-  )
-}
-
-function CreateRoleForm() {
-  return (
-    <div className="grid gap-6 py-4">
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="roleName" className="text-right">
-          Tên vai trò
-        </Label>
-        <Input id="roleName" placeholder="Nhập tên vai trò" className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="roleDescription" className="text-right">
-          Mô tả
-        </Label>
-        <Input id="roleDescription" placeholder="Mô tả vai trò" className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="roleLevel" className="text-right">
-          Cấp độ
-        </Label>
-        <Input id="roleLevel" type="number" placeholder="1-10" className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-start gap-4">
-        <Label className="text-right mt-2">Quyền hạn</Label>
-        <div className="col-span-3 space-y-3 max-h-60 overflow-y-auto">
-          {availablePermissions.map((permission) => (
-            <div key={permission.id} className="flex items-center space-x-2">
-              <Checkbox id={permission.id} />
-              <div className="flex-1">
-                <Label htmlFor={permission.id} className="font-medium">
-                  {permission.name}
-                </Label>
-                <p className="text-sm text-gray-500">{permission.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <DialogFooter>
-        <Button type="submit" className="bg-[#4DD0E1] hover:bg-[#4DD0E1]/90">
-          Tạo vai trò
-        </Button>
-      </DialogFooter>
     </div>
   )
 }

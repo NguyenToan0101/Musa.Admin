@@ -62,7 +62,13 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 
-
+function formatDate(dateStr: string | Date) {
+  return new Date(dateStr).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
 
 
 export function UserManagement() {
@@ -87,6 +93,10 @@ export function UserManagement() {
       alert("Xóa người dùng thất bại. Vui lòng thử lại.");
     }
   };
+
+  // Phân trang
+  const [userPage, setUserPage] = useState(1)
+  const usersPerPage = 10
 
 
 
@@ -201,6 +211,14 @@ export function UserManagement() {
     }
   };
 
+  useEffect(() => {
+    setUserPage(1)
+  }, [searchTerm, filterRole, filterStatus])
+
+
+
+  const pagedUsers = filteredUsers.slice((userPage - 1) * usersPerPage, userPage * usersPerPage)
+
 
 
 
@@ -245,7 +263,6 @@ export function UserManagement() {
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Hoạt động</option>
               <option value="lock">Bị khóa</option>
-              <option value="PENDING_APPROVAL">Chờ duyệt</option>
             </select>
           </div>
         </CardContent>
@@ -275,7 +292,7 @@ export function UserManagement() {
 
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {pagedUsers.map((user) => (
                 <React.Fragment key={user.id}>
                   <TableRow>
                     <TableCell>
@@ -304,7 +321,7 @@ export function UserManagement() {
                         {user.status ? "Hoạt động" : "Bị khóa"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{user.joinDate}</TableCell>
+                    <TableCell>{formatDate(user.joinDate)}</TableCell>
                     <TableCell>{user.orders}</TableCell>
                     <TableCell>{user.spent}</TableCell>
                     <TableCell className="text-right">
@@ -398,6 +415,25 @@ export function UserManagement() {
             </TableBody>
 
           </Table>
+          <div className="flex justify-center mt-4 space-x-2">
+            {Array.from(
+              { length: Math.ceil(filteredUsers.length / usersPerPage) },
+              (_, i) => i + 1
+            ).map(page => (
+              <button
+                key={page}
+                onClick={() => setUserPage(page)}
+                className={
+                  "px-3 py-1 rounded " +
+                  (userPage === page
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-700")
+                }
+              >
+                {page}
+              </button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

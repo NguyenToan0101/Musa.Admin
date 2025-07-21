@@ -8,3 +8,10 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+/** @type {import('next').NextConfig} */
+module.exports = {
+  images: {
+    domains: ['res.cloudinary.com'],
+  },
+}
