@@ -192,7 +192,7 @@ export function ProductManagement() {
 
   useEffect(() => {
     axios
-      .get<MainCategory[]>(`${process.env.NEXT_PUBLIC_API_BACKEND}/categories/main`)
+      .get<MainCategory[]>(`${process.env.NEXT_PUBLIC_API_BACKEND}/category/main`)
       .then(res => setCategories(res.data))
       .catch(err => console.error("Lỗi khi lấy categories:", err))
   }, [])
@@ -211,29 +211,28 @@ export function ProductManagement() {
 
   // Filter logic
   const filteredProducts = products.filter(p => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchTermProduct.toLowerCase()) ||
-      p.shopName.toLowerCase().includes(searchTermProduct.toLowerCase())
-    const matchesStatus =
-      filterStatusProduct === "all" || p.status === filterStatusProduct
-    return matchesSearch && matchesStatus
+    const nm = (p.name || "").toLowerCase()
+    const sn = (p.shopName || "").toLowerCase()
+    const kw = searchTermProduct.toLowerCase()
+    const statusOK = filterStatusProduct === "all" || p.status === filterStatusProduct
+
+    return (nm.includes(kw) || sn.includes(kw)) && statusOK
   })
 
 
 
   const filteredShops = shops
     .filter((shop) => {
-      const matchStatus = shopStatusFilter === "all" || shop.status === shopStatusFilter
-      const matchBusinessType = businessTypeFilter === "all" || shop.businessType === businessTypeFilter
-      const searchMatch =
-        shop.shopName.toLowerCase().includes(shopSearch.toLowerCase()) ||
-        shop.manageName?.toLowerCase().includes(shopSearch.toLowerCase())
-      return matchStatus && matchBusinessType && searchMatch
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime()
-      const dateB = new Date(b.createdAt).getTime()
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA
+      const statusOK = shopStatusFilter === "all" || shop.status === shopStatusFilter
+      const typeOK = businessTypeFilter === "all" || shop.businessType === businessTypeFilter
+
+      const nameLower = (shop.shopName || "").toLowerCase()
+      const ownerLower = (shop.manageName || "").toLowerCase()
+      const searchLower = shopSearch.toLowerCase()
+
+      const searchOK = nameLower.includes(searchLower) || ownerLower.includes(searchLower)
+
+      return statusOK && typeOK && searchOK
     })
 
   const [selectedShop, setSelectedShop] = useState<ShopDetailDTO | null>(null)
@@ -564,7 +563,7 @@ export function ProductManagement() {
                       <TableCell>
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 rounded-full bg-[#4DD0E1] flex items-center justify-center text-white font-bold">
-                            {shop.shopName.charAt(0).toUpperCase()}
+                            {(shop.shopName?.charAt(0) || "").toUpperCase()}
                           </div>
                           <div>
                             <div className="font-medium">{shop.shopName}</div>
@@ -685,7 +684,7 @@ export function ProductManagement() {
                 </DialogContent>
               </Dialog>
 
-                  {/* hiện 1 lần 10 shop */}
+              {/* hiện 1 lần 10 shop */}
               <div className="flex justify-center mt-4 space-x-2">
                 {Array.from({ length: shopPageCount }, (_, i) => i + 1).map(page => (
                   <button

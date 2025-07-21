@@ -64,7 +64,9 @@ interface Complaint {
   phone: string;
   reasonDescription: string;
   rawProductId?: number;
-  rawOrderId?: number;      
+  rawReviewId?: number;
+  rawPaymentId?: number;
+  rawShippingOrderId?: number
   categoryName: 'product' | 'shipping' | 'payment' | 'feedback';
   status: 'pending' | 'in_progress' | 'resolved';
   createdAt: string;
@@ -151,202 +153,7 @@ export function ComplaintManagement() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab Tổng quan */}
-        {/*
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-l-4 border-l-red-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Khiếu nại mới</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">23</div>
-                <p className="text-xs text-red-500 flex items-center mt-1">
-                  <span className="mr-1">↗</span>
-                  +3 so với hôm qua
-                </p>
-              </CardContent>
-            </Card>
 
-            <Card className="border-l-4 border-l-yellow-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Đang xử lý</CardTitle>
-                <Clock className="h-4 w-4 text-yellow-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">15</div>
-                <p className="text-xs text-yellow-500 flex items-center mt-1">
-                  <span className="mr-1">↘</span>
-                  -2 so với hôm qua
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-green-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Đã giải quyết</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">187</div>
-                <p className="text-xs text-green-500 flex items-center mt-1">
-                  <span className="mr-1">↗</span>
-                  +12 so với hôm qua
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-[#4DD0E1]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Thời gian phản hồi TB</CardTitle>
-                <MessageSquare className="h-4 w-4 text-[#4DD0E1]" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-[#001F54]">2.4h</div>
-                <p className="text-xs text-[#81C784] flex items-center mt-1">
-                  <span className="mr-1">↘</span>
-                  -0.3h so với tuần trước
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2 bg-gradient-to-br from-white to-blue-50/50 border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <TrendingUp className="w-5 h-5 text-[#001F54]" />
-                  <span>Xu hướng Khiếu nại</span>
-                </CardTitle>
-                <CardDescription>Thống kê khiếu nại theo tháng</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={complaintStatsData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="month" stroke="#666" />
-                    <YAxis stroke="#666" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "rgba(255, 255, 255, 0.95)",
-                        border: "none",
-                        borderRadius: "12px",
-                        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke="#001F54"
-                      strokeWidth={3}
-                      dot={{ fill: "#001F54", r: 6 }}
-                      name="Tổng khiếu nại"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="resolved"
-                      stroke="#81C784"
-                      strokeWidth={3}
-                      dot={{ fill: "#81C784", r: 6 }}
-                      name="Đã giải quyết"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="pending"
-                      stroke="#E57373"
-                      strokeWidth={3}
-                      dot={{ fill: "#E57373", r: 6 }}
-                      name="Chờ xử lý"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-white to-green-50/50 border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>Phân loại Khiếu nại</CardTitle>
-                <CardDescription>Phân bố theo danh mục</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={complaintCategoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {complaintCategoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: any) => [`${value}%`, "Tỷ lệ"]}
-                      contentStyle={{
-                        backgroundColor: "rgba(255, 255, 255, 0.95)",
-                        border: "none",
-                        borderRadius: "12px",
-                        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="mt-4 space-y-2">
-                  {complaintCategoryData.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                        <span className="text-sm">{item.name}</span>
-                      </div>
-                      <span className="text-sm font-medium">{item.value}%</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="bg-gradient-to-br from-white to-purple-50/50 border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle>Thời gian Phản hồi</CardTitle>
-              <CardDescription>Phân bố thời gian phản hồi khiếu nại</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={responseTimeData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="time" stroke="#666" />
-                  <YAxis stroke="#666" />
-                  <Tooltip
-                    formatter={(value: any) => [value, "Số lượng"]}
-                    contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.95)",
-                      border: "none",
-                      borderRadius: "12px",
-                      boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                    }}
-                  />
-                  <Bar dataKey="count" name="Số lượng">
-                    {responseTimeData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={index === 0 ? "#81C784" : index === 1 ? "#4DD0E1" : index === 2 ? "#FFB74D" : "#E57373"}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-      */}
 
         <TabsContent value="complaints" className="space-y-6">
           {/* Filters */}
@@ -373,7 +180,7 @@ export function ComplaintManagement() {
                     <SelectValue placeholder="Trạng thái" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="all">Trạng Thái</SelectItem>
                     <SelectItem value="pending">Chờ xử lý</SelectItem>
                     <SelectItem value="in_progress">Đang xử lý</SelectItem>
                     <SelectItem value="resolved">Đã giải quyết</SelectItem>
@@ -384,11 +191,11 @@ export function ComplaintManagement() {
                     <SelectValue placeholder="Danh mục" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="all">Danh Mục</SelectItem>
                     <SelectItem value="product">Sản phẩm</SelectItem>
                     <SelectItem value="shipping">Vận chuyển</SelectItem>
                     <SelectItem value="payment">Thanh toán</SelectItem>
-                    <SelectItem value="service">Dịch vụ</SelectItem>
+                    <SelectItem value="feedback">Review</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -419,7 +226,13 @@ export function ComplaintManagement() {
                     const refId =
                       c.categoryName === 'product'
                         ? `SP-${c.rawProductId}`
-                        : `ORD-${c.rawOrderId}`;
+                        : c.categoryName === 'feedback'
+                          ? `RV-${c.rawReviewId}`
+                          : c.categoryName === 'payment'
+                            ? `PM-${c.rawPaymentId}`
+                            : c.categoryName === 'shipping'
+                              ? `OD-${c.rawShippingOrderId}`  // OD = Order-Dispatch
+                              : '';
                     return (
                       <TableRow key={c.complaintId}>
                         {/* Khách hàng */}
@@ -561,7 +374,7 @@ export function ComplaintManagement() {
                               ? "Vận chuyển"
                               : selectedComplaint.category === "payment"
                                 ? "Thanh toán"
-                                : "Dịch vụ"}
+                                : "Review"}
                         </Badge>
                       </div>
                       <div className="flex justify-between">
