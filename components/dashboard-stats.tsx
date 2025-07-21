@@ -1,6 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Line,
@@ -31,78 +32,113 @@ import {
 } from "recharts"
 import { TrendingUp, DollarSign, Users, Package, Target, Zap } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import axios from "axios"
+import ScaleLoader from 'react-spinners/ScaleLoader'
 
+
+
+
+
+export function DashboardStats() {
 // Dữ liệu cho biểu đồ doanh thu chi tiết theo quý
-const quarterlyRevenueData = [
+const [quarterlyRevenueData, setquarterlyRevenueData] =  useState([
   { quarter: "Q1 2023", revenue: 450000000, growth: 12, orders: 15420, avgOrder: 29200 },
-  { quarter: "Q2 2023", revenue: 520000000, growth: 15.5, orders: 17800, avgOrder: 29200 },
-  { quarter: "Q3 2023", revenue: 580000000, growth: 11.5, orders: 19200, avgOrder: 30200 },
-  { quarter: "Q4 2023", revenue: 680000000, growth: 17.2, orders: 22100, avgOrder: 30800 },
-  { quarter: "Q1 2024", revenue: 750000000, growth: 66.7, orders: 24300, avgOrder: 30900 },
-  { quarter: "Q2 2024", revenue: 820000000, growth: 57.7, orders: 26500, avgOrder: 31000 },
-]
+  // { quarter: "Q2 2023", revenue: 520000000, growth: 15.5, orders: 17800, avgOrder: 29200 },
+  // { quarter: "Q3 2023", revenue: 580000000, growth: 11.5, orders: 19200, avgOrder: 30200 },
+  // { quarter: "Q4 2023", revenue: 680000000, growth: 17.2, orders: 22100, avgOrder: 30800 },
+  // { quarter: "Q1 2024", revenue: 750000000, growth: 66.7, orders: 24300, avgOrder: 30900 },
+  // { quarter: "Q2 2024", revenue: 820000000, growth: 57.7, orders: 26500, avgOrder: 31000 },
+])
 
 // Dữ liệu phân tích người dùng theo độ tuổi và giới tính
-const userDemographicsData = [
+const [userDemographicsData,setuserDemographicsData] = useState([
   { ageGroup: "18-25", male: 2400, female: 2800, total: 5200 },
   { ageGroup: "26-35", male: 3200, female: 3600, total: 6800 },
   { ageGroup: "36-45", male: 2800, female: 2400, total: 5200 },
   { ageGroup: "46-55", male: 1800, female: 1600, total: 3400 },
   { ageGroup: "55+", male: 1200, female: 1000, total: 2200 },
-]
+])
 
 // Dữ liệu conversion funnel
-const conversionFunnelData = [
+const [conversionFunnelData, setconversionFunnelData] = useState ([
   { name: "Lượt truy cập", value: 100000, fill: "#001F54" },
-  { name: "Xem sản phẩm", value: 45000, fill: "#1E3A8A" },
-  { name: "Thêm vào giỏ", value: 18000, fill: "#3B82F6" },
-  { name: "Bắt đầu thanh toán", value: 12000, fill: "#60A5FA" },
-  { name: "Hoàn thành đơn hàng", value: 8500, fill: "#93C5FD" },
-]
+  // { name: "Xem sản phẩm", value: 45000, fill: "#1E3A8A" },
+  // { name: "Thêm vào giỏ", value: 18000, fill: "#3B82F6" },
+  // { name: "Bắt đầu thanh toán", value: 12000, fill: "#60A5FA" },
+  // { name: "Hoàn thành đơn hàng", value: 8500, fill: "#93C5FD" },
+])
 
 // Dữ liệu hiệu suất bán hàng theo khu vực
-const regionPerformanceData = [
-  { region: "Hà Nội", revenue: 180000000, orders: 8500, customers: 12000 },
-  { region: "TP.HCM", revenue: 250000000, orders: 11200, customers: 15800 },
-  { region: "Đà Nẵng", revenue: 95000000, orders: 4200, customers: 6500 },
-  { region: "Cần Thơ", revenue: 75000000, orders: 3800, customers: 5200 },
-  { region: "Hải Phòng", revenue: 85000000, orders: 4100, customers: 5800 },
-  { region: "Khác", revenue: 65000000, orders: 3200, customers: 4700 },
-]
+const [regionPerformanceData, setregionPerformanceData] = useState([
+  { region: "Hà Nội", revenue: 180000000,orders : 8500 },
+  // { region: "TP.HCM", revenue: 250000000, orders: 11200, customers: 15800 },
+  // { region: "Đà Nẵng", revenue: 95000000, orders: 4200, customers: 6500 },
+  // { region: "Cần Thơ", revenue: 75000000, orders: 3800, customers: 5200 },
+  // { region: "Hải Phòng", revenue: 85000000, orders: 4100, customers: 5800 },
+  // { region: "Khác", revenue: 65000000, orders: 3200, customers: 4700 },
+])
 
 // Dữ liệu TreeMap cho sản phẩm bán chạy
-const topProductsData = [
+const [topProductsData, settopProductsData] = useState([
   { name: "iPhone 15", value: 45000000, category: "Điện tử" },
-  { name: "Samsung Galaxy", value: 38000000, category: "Điện tử" },
-  { name: "Áo thun nam", value: 25000000, category: "Thời trang" },
-  { name: "Giày sneaker", value: 32000000, category: "Giày dép" },
-  { name: "Laptop Dell", value: 28000000, category: "Máy tính" },
-  { name: "Túi xách nữ", value: 22000000, category: "Thời trang" },
-  { name: "Đồng hồ thông minh", value: 18000000, category: "Điện tử" },
-  { name: "Quần jeans", value: 15000000, category: "Thời trang" },
-]
+  // { name: "Samsung Galaxy", value: 38000000, category: "Điện tử" },
+  // { name: "Áo thun nam", value: 25000000, category: "Thời trang" },
+  // { name: "Giày sneaker", value: 32000000, category: "Giày dép" },
+  // { name: "Laptop Dell", value: 28000000, category: "Máy tính" },
+  // { name: "Túi xách nữ", value: 22000000, category: "Thời trang" },
+  // { name: "Đồng hồ thông minh", value: 18000000, category: "Điện tử" },
+  // { name: "Quần jeans", value: 15000000, category: "Thời trang" },
+])
 
 // Dữ liệu Radar Chart cho đánh giá chất lượng dịch vụ
-const serviceQualityData = [
+const [serviceQualityData,setserviceQualityData] = useState([
   { metric: "Giao hàng", score: 85, fullMark: 100 },
-  { metric: "Chất lượng SP", score: 92, fullMark: 100 },
-  { metric: "Hỗ trợ KH", score: 78, fullMark: 100 },
-  { metric: "Giá cả", score: 88, fullMark: 100 },
-  { metric: "Giao diện", score: 95, fullMark: 100 },
-  { metric: "Bảo mật", score: 90, fullMark: 100 },
-]
+  // { metric: "Chất lượng SP", score: 92, fullMark: 100 },
+  // { metric: "Hỗ trợ KH", score: 78, fullMark: 100 },
+  // { metric: "Giá cả", score: 88, fullMark: 100 },
+  // { metric: "Giao diện", score: 95, fullMark: 100 },
+  // { metric: "Bảo mật", score: 90, fullMark: 100 },
+])
 
 // Dữ liệu thời gian thực cho hoạt động hệ thống
-const realTimeActivityData = [
+const [realTimeActivityData, setrealTimeActivityData]= useState([
   { time: "00:00", users: 1200, orders: 45, revenue: 2500000 },
   { time: "04:00", users: 800, orders: 28, revenue: 1800000 },
-  { time: "08:00", users: 3500, orders: 125, revenue: 6200000 },
-  { time: "12:00", users: 5200, orders: 180, revenue: 8900000 },
-  { time: "16:00", users: 4800, orders: 165, revenue: 7800000 },
-  { time: "20:00", users: 6200, orders: 220, revenue: 11200000 },
-]
+  // { time: "08:00", users: 3500, orders: 125, revenue: 6200000 },
+  // { time: "12:00", users: 5200, orders: 180, revenue: 8900000 },
+  // { time: "16:00", users: 4800, orders: 165, revenue: 7800000 },
+  // { time: "20:00", users: 6200, orders: 220, revenue: 11200000 },
+])
 
-export function DashboardStats() {
+   const [isLoading, setIsLoading] = useState(false);
+ 
+const fetchData = async() =>{
+  setIsLoading(true)
+  try{
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BACKEND}/dashboard/data`);
+    if(response.data != null){
+        setquarterlyRevenueData(response.data.quarterlyRevenueDTOList);
+        setuserDemographicsData(response.data.userDemographicsDTOList)
+        setconversionFunnelData(response.data.conversionFunnelDTOList)
+        setregionPerformanceData(response.data.regionPerformanceDTOList)
+        settopProductsData(response.data.topProductDTOList);
+        setserviceQualityData(response.data.serviceQualityDTOList);
+        setrealTimeActivityData(response.data.realTimeActivityDTOList)
+        console.log(response.data)
+    }else{
+
+    }
+  }catch (err){
+    console.error("Api error" , err)
+  } finally {
+    setIsLoading(false)
+  }
+}
+
+useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -138,9 +174,8 @@ export function DashboardStats() {
             Thời gian thực
           </TabsTrigger>
         </TabsList>
-
         {/* Tab Doanh thu */}
-        <TabsContent value="revenue" className="space-y-6">
+        {!isLoading ? (<TabsContent value="revenue" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-gradient-to-br from-white to-blue-50/50 border-0 shadow-xl">
               <CardHeader>
@@ -207,12 +242,16 @@ export function DashboardStats() {
                       stroke="#666"
                       tickFormatter={(value) => `₫${value / 1000000}M`}
                     />
+                    
                     <Tooltip
                       formatter={(value: any, name: string) => {
-                        if (name === "revenue") return [`₫${(value / 1000000).toFixed(0)}M`, "Doanh thu"]
-                        return [value, name]
+                        if (name === "revenue") return [`₫${(value / 1000000).toFixed(0)}M`, "Doanh thu"];
+                        return [value, name];
                       }}
-                      labelFormatter={(label) => `Khu vực: ${label}`}
+                      labelFormatter={(_, payload: any[]) => {
+                        const region = payload?.[0]?.payload?.region;
+                        return region ? `Khu vực: ${region}` : '';
+                      }}
                       contentStyle={{
                         backgroundColor: "rgba(255, 255, 255, 0.95)",
                         border: "none",
@@ -220,13 +259,19 @@ export function DashboardStats() {
                         boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
                       }}
                     />
-                    <Scatter dataKey="revenue" fill="#81C784" />
+                    <Scatter dataKey="revenue" fill="#81C784" shape="circle" />
                   </ScatterChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
+        </TabsContent>) : (
+          <div className = "fixed inset-0 bg-white/70 flex items-center justify-center z-50">
+          <ScaleLoader color = "#001F54"  speedMultiplier = { 1.2 } />
+        </div>
+        )}
+        
+        
 
         {/* Tab Người dùng */}
         <TabsContent value="users" className="space-y-6">
@@ -243,6 +288,15 @@ export function DashboardStats() {
                     <XAxis dataKey="ageGroup" stroke="#666" />
                     <YAxis stroke="#666" />
                     <Tooltip
+                    formatter={(value, name, props) => {
+    if (name === "Nam") return [value, "Nam"];
+    if (name === "Nữ") return [value, "Nữ"];
+    return [value, name];
+  }}
+ labelFormatter={(label) => {
+  const item = userDemographicsData.find(d => d.ageGroup === label);
+  return `${label} (Tổng: ${item?.total ?? "?"})`;
+}}
                       contentStyle={{
                         backgroundColor: "rgba(255, 255, 255, 0.95)",
                         border: "none",
@@ -253,6 +307,7 @@ export function DashboardStats() {
                     <Legend />
                     <Bar dataKey="male" stackId="a" fill="#4DD0E1" name="Nam" radius={[0, 0, 4, 4]} />
                     <Bar dataKey="female" stackId="a" fill="#81C784" name="Nữ" radius={[4, 4, 0, 0]} />
+                    
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>

@@ -34,10 +34,13 @@ const handleLogin = async (e: React.FormEvent) => {
 
     // Axios tự động parse JSON, data nằm trong response.data
     const data = response.data
-    
+    console.log('Daaataaa ',data.email)
+    console.log('log email----',email)
     // Lưu token nếu cần
-    if (typeof window !== 'undefined' && data.token) {
-      localStorage.setItem("adminToken", data.token)
+    if (typeof window !== 'undefined' && data.email) {
+      // localStorage.setItem("adminToken", data.token)
+      console.log('log window email----',email)
+      localStorage.setItem("adminEmail", email) 
     }
     setIsAuthenticated(true)
 

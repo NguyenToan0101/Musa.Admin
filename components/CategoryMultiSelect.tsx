@@ -49,46 +49,52 @@ const CategoryMultiSelect = ({ defaultCategories = [] ,onChange}: CategoryMultiS
 const [options, setOptions] = useState<OptionType[]>(baseOptions);
  const [hasInitializedDefault, setHasInitializedDefault] = useState(0); 
 useEffect(() => {
-  console.log("🟩 defaultCategories input:", defaultCategories);
+  console.log("defaultCategories input:", defaultCategories);
   if (!hasInitializedDefault && defaultCategories && defaultCategories.length > 0) {
     const matched = baseOptions.filter((opt) =>
       defaultCategories.some((dc) => dc.value === opt.value)
     );
     
-    
-      setSelectedCategories(matched);
-    
+    const isSelectingAll = matched.some((item) => item.value === 313);
+
+    if (isSelectingAll) {
+      // Nếu chọn "313" → chỉ giữ "313", disable các mục còn lại
+      setSelectedCategories([{ value: 313, label: 'Tất cả danh mục' }]);
+
+      const updatedOptions = baseOptions.map((opt) =>
+        opt.value !== 313 ? { ...opt, isDisabled: true } : opt
+      );
+      setOptions(updatedOptions);
+       if (onChange) onChange([{ value: 313, label: 'Tất cả danh mục' }]);
+      console.log('Selected: [Tất cả danh mục]');
+    } else {
+      // Nếu không chọn "313", thì đảm bảo "313" bị remove
+      const filtered = matched.filter((item) => item.value !== 313);
+
+      // Nếu "313" từng được chọn trước đó → enable lại các mục khác
+      if (
+        selectedCategories.some((item) => item.value === 313) 
+        
+      ) {
+        const updatedOptions = baseOptions.map((opt) => ({
+          ...opt,
+          isDisabled: false,
+        }));
+        setOptions(updatedOptions);
+      }
+      
+      setSelectedCategories(filtered);
+      if (onChange) onChange(filtered);
+      console.log('Selected:', filtered.map((item) => item.label));
+    }
+    //   setSelectedCategories(matched);
+      
+    //  if (onChange) {
+    //   onChange(matched);
+    // }
   }
 }, [defaultCategories]); 
-// useEffect(() => {
-//    console.log("🟩 defaultCategories input:", defaultCategories);
-//   if (
-//     defaultCategories &&
-//     defaultCategories.length > 0 &&
-//     hasInitializedDefault < 2
-//   ) {
-//     const isValid = defaultCategories.every(
-//       (dc) => typeof dc.value === "number" && typeof dc.label === "string"
-//     );
-//     if (!isValid) {
-//       console.warn("❌ defaultCategories có dữ liệu không hợp lệ:", defaultCategories);
-//       return;
-//     }
 
-//     setHasInitializedDefault((prev) => prev + 1);
-//   }
-// }, [defaultCategories]);
-
-// useEffect(() => {
-//   console.log(">>> hasInitializedDefault:", hasInitializedDefault);
-//   if (hasInitializedDefault === 2 && defaultCategories && defaultCategories.length > 0) {
-//     const matched = baseOptions.filter((opt) =>
-//       defaultCategories.some((dc) => dc.value === opt.value)
-//     );
-//     console.log(">>> Setting selectedCategories to:", matched);
-//     setSelectedCategories(matched);
-//   }
-// }, [hasInitializedDefault, defaultCategories]);
 
 
  const handleChange = (

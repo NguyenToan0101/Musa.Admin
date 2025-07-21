@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -184,7 +184,25 @@ export function PermissionManagement() {
     const matchesRole = filterRole === "all" || user.roleId === filterRole
     return matchesSearch && matchesRole
   })
-
+    //  const [email, setEmail] = useState("");
+      console.log("-----------Email", localStorage.getItem("adminEmail"));
+    
+     useEffect(() => {
+        if (typeof window !== "undefined") {
+          const storedEmail = localStorage.getItem("adminEmail");
+          console.log("-----------Email from localStorage", storedEmail);
+          // if (storedEmail) {
+          //   setEmail(storedEmail);
+          // }
+        }
+      }, []);
+    
+    //   useEffect(() => {
+    //     // Theo dõi khi email thực sự thay đổi
+    //     if (email) {
+    //       console.log("-----------Updated email state:", email);
+    //     }
+    //   }, [email]);
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

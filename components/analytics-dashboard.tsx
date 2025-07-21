@@ -27,104 +27,139 @@ import {
 import { TrendingUp, DollarSign, Users, Package, Target, Calendar, PieChartIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import axios from "axios"
+import { useEffect, useState } from "react"
 
-// Dữ liệu doanh thu theo năm
-const yearlyRevenueData = [
+import ScaleLoader from 'react-spinners/ScaleLoader'
+
+
+
+export function AnalyticsDashboard() {
+  // Dữ liệu doanh thu theo năm
+const [yearlyRevenueData, setyearlyRevenueData]  = useState([
   { year: "2020", revenue: 1250000000, profit: 320000000, cost: 930000000 },
-  { year: "2021", revenue: 1850000000, profit: 480000000, cost: 1370000000 },
-  { year: "2022", revenue: 2450000000, profit: 680000000, cost: 1770000000 },
-  { year: "2023", revenue: 3200000000, profit: 950000000, cost: 2250000000 },
-  { year: "2024", revenue: 4100000000, profit: 1250000000, cost: 2850000000 },
-]
+  // { year: "2021", revenue: 1850000000, profit: 480000000, cost: 1370000000 },
+  // { year: "2022", revenue: 2450000000, profit: 680000000, cost: 1770000000 },
+  // { year: "2023", revenue: 3200000000, profit: 950000000, cost: 2250000000 },
+  // { year: "2024", revenue: 4100000000, profit: 1250000000, cost: 2850000000 },
+])
 
 // Dữ liệu doanh thu theo tháng
-const monthlyRevenueData = [
+const [monthlyRevenueData, setmonthlyRevenueData] = useState( [
   { month: "01/2024", revenue: 320000000, profit: 95000000, cost: 225000000 },
-  { month: "02/2024", revenue: 340000000, profit: 102000000, cost: 238000000 },
-  { month: "03/2024", revenue: 380000000, profit: 115000000, cost: 265000000 },
-  { month: "04/2024", revenue: 360000000, profit: 108000000, cost: 252000000 },
-  { month: "05/2024", revenue: 410000000, profit: 125000000, cost: 285000000 },
-  { month: "06/2024", revenue: 450000000, profit: 135000000, cost: 315000000 },
-]
+  // { month: "02/2024", revenue: 340000000, profit: 102000000, cost: 238000000 },
+  // { month: "03/2024", revenue: 380000000, profit: 115000000, cost: 265000000 },
+  // { month: "04/2024", revenue: 360000000, profit: 108000000, cost: 252000000 },
+  // { month: "05/2024", revenue: 410000000, profit: 125000000, cost: 285000000 },
+  // { month: "06/2024", revenue: 450000000, profit: 135000000, cost: 315000000 },
+])
 
 // Dữ liệu phân tích người dùng theo khu vực
-const userRegionData = [
+const [userRegionData,setuserRegionData] =useState( [
   { region: "Miền Bắc", users: 12500, percentage: 35 },
-  { region: "Miền Trung", users: 8200, percentage: 23 },
-  { region: "Miền Nam", users: 15000, percentage: 42 },
-]
+  // { region: "Miền Trung", users: 8200, percentage: 23 },
+  // { region: "Miền Nam", users: 15000, percentage: 42 },
+])
 
 // Dữ liệu phân tích người dùng theo thiết bị
-const userDeviceData = [
+const [userDeviceData,setuserDeviceData] =useState( [
   { name: "Mobile", value: 65, color: "#4DD0E1" },
-  { name: "Desktop", value: 25, color: "#001F54" },
-  { name: "Tablet", value: 10, color: "#81C784" },
-]
+  // { name: "Desktop", value: 25, color: "#001F54" },
+  // { name: "Tablet", value: 10, color: "#81C784" },
+])
 
 // Dữ liệu phân tích người dùng theo độ tuổi và giới tính
-const userDemographicsData = [
+const [userDemographicsData, setuserDemographicsData] = useState ([
   { ageGroup: "18-25", male: 2400, female: 2800, total: 5200 },
   { ageGroup: "26-35", male: 3200, female: 3600, total: 6800 },
   { ageGroup: "36-45", male: 2800, female: 2400, total: 5200 },
   { ageGroup: "46-55", male: 1800, female: 1600, total: 3400 },
   { ageGroup: "55+", male: 1200, female: 1000, total: 2200 },
-]
+])
 
 // Dữ liệu phân tích sản phẩm theo danh mục
-const productCategoryData = [
+const [productCategoryData,setproductCategoryData] =useState( [
   { category: "Điện tử", products: 1250, sales: 45000, revenue: 1350000000 },
-  { category: "Thời trang", products: 2800, sales: 38000, revenue: 950000000 },
-  { category: "Gia dụng", products: 1500, sales: 25000, revenue: 750000000 },
-  { category: "Mỹ phẩm", products: 950, sales: 18000, revenue: 650000000 },
-  { category: "Thực phẩm", products: 1200, sales: 22000, revenue: 550000000 },
-  { category: "Sách", products: 3500, sales: 15000, revenue: 450000000 },
-]
+  // { category: "Thời trang", products: 2800, sales: 38000, revenue: 950000000 },
+  // { category: "Gia dụng", products: 1500, sales: 25000, revenue: 750000000 },
+  // { category: "Mỹ phẩm", products: 950, sales: 18000, revenue: 650000000 },
+  // { category: "Thực phẩm", products: 1200, sales: 22000, revenue: 550000000 },
+  // { category: "Sách", products: 3500, sales: 15000, revenue: 450000000 },
+])
 
 // Dữ liệu phân tích sản phẩm theo đánh giá
-const productRatingData = [
+const [productRatingData,setproductRatingData] = useState([
   { rating: "5 sao", count: 12500, percentage: 45 },
-  { rating: "4 sao", count: 8200, percentage: 30 },
-  { rating: "3 sao", count: 4100, percentage: 15 },
-  { rating: "2 sao", count: 1650, percentage: 6 },
-  { rating: "1 sao", count: 1100, percentage: 4 },
-]
+  // { rating: "4 sao", count: 8200, percentage: 30 },
+  // { rating: "3 sao", count: 4100, percentage: 15 },
+  // { rating: "2 sao", count: 1650, percentage: 6 },
+  // { rating: "1 sao", count: 1100, percentage: 4 },
+])
 
 // Dữ liệu phân tích đơn hàng theo trạng thái
-const orderStatusData = [
+const [orderStatusData,setorderStatusData] =useState( [
   { status: "Hoàn thành", value: 68, color: "#81C784" },
-  { status: "Đang xử lý", value: 18, color: "#4DD0E1" },
-  { status: "Đang giao", value: 10, color: "#FFB74D" },
-  { status: "Đã hủy", value: 4, color: "#E57373" },
-]
+  // { status: "Đang xử lý", value: 18, color: "#4DD0E1" },
+  // { status: "Đang giao", value: 10, color: "#FFB74D" },
+  // { status: "Đã hủy", value: 4, color: "#E57373" },
+])
 
 // Dữ liệu phân tích đơn hàng theo phương thức thanh toán
-const paymentMethodData = [
+const [paymentMethodData,setpaymentMethodData] =useState( [
   { method: "Thẻ tín dụng", value: 45, color: "#001F54" },
-  { method: "Ví điện tử", value: 30, color: "#4DD0E1" },
-  { method: "COD", value: 20, color: "#81C784" },
-  { method: "Chuyển khoản", value: 5, color: "#FFB74D" },
-]
+  // { method: "Ví điện tử", value: 30, color: "#4DD0E1" },
+  // { method: "COD", value: 20, color: "#81C784" },
+  // { method: "Chuyển khoản", value: 5, color: "#FFB74D" },
+])
 
 // Dữ liệu phân tích đơn hàng theo thời gian trong ngày
-const orderTimeData = [
+const [orderTimeData,setorderTimeData] = useState([
   { time: "00:00 - 04:00", orders: 850 },
-  { time: "04:00 - 08:00", orders: 1200 },
-  { time: "08:00 - 12:00", orders: 3500 },
-  { time: "12:00 - 16:00", orders: 4200 },
-  { time: "16:00 - 20:00", orders: 3800 },
-  { time: "20:00 - 24:00", orders: 2500 },
-]
+  // { time: "04:00 - 08:00", orders: 1200 },
+  // { time: "08:00 - 12:00", orders: 3500 },
+  // { time: "12:00 - 16:00", orders: 4200 },
+  // { time: "16:00 - 20:00", orders: 3800 },
+  // { time: "20:00 - 24:00", orders: 2500 },
+])
 
 // Dữ liệu phân tích chất lượng dịch vụ
-const serviceQualityData = [
+const [serviceQualityData,setserviceQualityData] =useState( [
   { metric: "Độ tin cậy", score: 92 },
-  { metric: "Khả năng đáp ứng", score: 85 },
-  { metric: "Sự đảm bảo", score: 88 },
-  { metric: "Sự đồng cảm", score: 90 },
-  { metric: "Tính hữu hình", score: 82 },
-]
+  // { metric: "Khả năng đáp ứng", score: 85 },
+  // { metric: "Sự đảm bảo", score: 88 },
+  // { metric: "Sự đồng cảm", score: 90 },
+  // { metric: "Tính hữu hình", score: 82 },
+])
+  const [isLoading, setIsLoading] = useState(false);
+const fetchData = async() =>{
+  setIsLoading(true)
+  try{
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BACKEND}/statistics/data`);
+    if(response.data != null){
+        setserviceQualityData(response.data.serviceQualityDTOS)
+        setorderTimeData(response.data.orderTimeDTOS)
+        setpaymentMethodData(response.data.paymentMethodDTOS)
+        setorderStatusData(response.data.orderStatusDTOS)
+        setproductRatingData(response.data.productRatingDTOS)
+        setproductCategoryData(response.data.productCategoryDTOS)
+        setuserDeviceData(response.data.userDeviceDTOS)
+        setuserRegionData(response.data.userRegionDTOS)
+        setmonthlyRevenueData(response.data.monthlyRevenueDTOS)
+        setyearlyRevenueData(response.data.yearlyRevenueDTOS)
+        console.log(response.data)
+    }else{
+      console.log('Data is null')
+    }
+  }catch(error){
+    console.log('API: Error', error)
+  }finally {
+      setIsLoading(false)
+    }
+}
 
-export function AnalyticsDashboard() {
+useEffect(()=>{
+  fetchData()
+},[])
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -177,7 +212,7 @@ export function AnalyticsDashboard() {
         </TabsList>
 
         {/* Tab Doanh thu */}
-        <TabsContent value="revenue" className="space-y-6">
+        {!isLoading ? (<TabsContent value="revenue" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-gradient-to-br from-white to-blue-50/50 border-0 shadow-xl">
               <CardHeader>
@@ -368,7 +403,10 @@ export function AnalyticsDashboard() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent>) : ( <div className = "fixed inset-0 bg-white/70 flex items-center justify-center z-50">
+          <ScaleLoader color = "#001F54"  speedMultiplier = { 1.2 } />
+        </div>)}
+        
 
         {/* Tab Người dùng */}
         <TabsContent value="users" className="space-y-6">
@@ -396,7 +434,7 @@ export function AnalyticsDashboard() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: any) => [`${value}%`, "Tỷ lệ"]}
+                      formatter={(value: any) => [`${value.toFixed(2)}%`, "Tỷ lệ"]}
                       contentStyle={{
                         backgroundColor: "rgba(255, 255, 255, 0.95)",
                         border: "none",
@@ -413,7 +451,7 @@ export function AnalyticsDashboard() {
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                         <span className="text-sm">{item.name}</span>
                       </div>
-                      <span className="text-sm font-medium">{item.value}%</span>
+                      <span className="text-sm font-medium">{item.value.toFixed(2)}%</span>
                     </div>
                   ))}
                 </div>
@@ -573,7 +611,8 @@ export function AnalyticsDashboard() {
                     <Tooltip
                       formatter={(value: any, name: string) => {
                         if (name === "count") return [value.toLocaleString(), "Số lượng"]
-                        if (name === "percentage") return [`${value}%`, "Tỷ lệ"]
+                        if (name === "percentage") return [`${value.toFixed(2)}%`, "Tỷ lệ"]
+
                         return [value, name]
                       }}
                       contentStyle={{
@@ -598,13 +637,13 @@ export function AnalyticsDashboard() {
                     <div key={index} className="space-y-1">
                       <div className="flex justify-between">
                         <span className="font-medium">{item.rating}</span>
-                        <span>{item.percentage}%</span>
+                        <span>{item.percentage.toFixed(2)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="h-2 rounded-full"
                           style={{
-                            width: `${item.percentage}%`,
+                            width: `${item.percentage.toFixed(2)}%`,
                             backgroundColor:
                               index === 0
                                 ? "#81C784"
