@@ -1,4 +1,4 @@
-# Build stage
+# Stage 1: Build app
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -6,17 +6,23 @@ COPY . .
 RUN npm install
 RUN npm run build
 
-# Nginx stage
-FROM nginx:stable-alpine AS runner
+# Stage 2: Runner với Nginx + Node.js
+FROM node:20-alpine AS runner
 
-# Copy Nginx config (bạn cần tự tạo file nginx.conf ở cùng thư mục với Dockerfile)
+# Cài nginx
+RUN apk add --no-cache nginx
+
+WORKDIR /app
+COPY --from=builder /app ./
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy built app from builder
-# Giả sử build ra thư mục 'build' (React) hoặc 'out' (Next.js), bạn sửa lại đúng tên thư mục
-COPY --from=builder /app/build /usr/share/nginx/html
+ENV NODE_ENV production
 
-# Expose port 80
+# Copy default nginx static dir để tránh lỗi
+RUN mkdir -p /run/nginx
+
+# Expose port for Nginx
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Start cả Nginx và Next.js app
+CMD sh -c "npm run start & nginx -g 'daemon off;'"
