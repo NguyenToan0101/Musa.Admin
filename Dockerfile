@@ -1,28 +1,30 @@
-# Stage 1: Build app
-FROM node:20-alpine AS builder
+# Stage 1: Build the Next.js app
+FROM node:18-alpine AS builder
 
+# Set working directory
 WORKDIR /app
-COPY . .
+
+# Install dependencies
+COPY package*.json ./
 RUN npm install
-RUN npm run build
 
-# Stage 2: Runner với Nginx + Node.js
-FROM node:20-alpine AS runner
+# Copy source code
+COPY . .
 
-# Cài nginx
-RUN apk add --no-cache nginx
+# Build the static app
+RUN npm run build && npm run export
 
-WORKDIR /app
-COPY --from=builder /app ./
-COPY nginx.conf /etc/nginx/nginx.conf
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
 
-ENV NODE_ENV production
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy default nginx static dir để tránh lỗi
-RUN mkdir -p /run/nginx
+# Copy built app from builder
+COPY --from=builder /app/out /usr/share/nginx/html
 
-# Expose port for Nginx
+# Expose port
 EXPOSE 80
 
-# Start cả Nginx và Next.js app
-CMD sh -c "npm run start & nginx -g 'daemon off;'"
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
