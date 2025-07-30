@@ -12,8 +12,7 @@ RUN npm install
 COPY . .
 
 # Build the static app
-RUN npm run build && npm run export
-
+RUN npm run build 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
 
