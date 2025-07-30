@@ -684,14 +684,14 @@ useEffect(()=>{
                       outerRadius={90}
                       paddingAngle={5}
                       dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(2)}%`}
                     >
                       {orderStatusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: any) => [`${value}%`, "Tỷ lệ"]}
+                      formatter={(value: any) => [`${value.toFixed(2)}%`, "Tỷ lệ"]}
                       contentStyle={{
                         backgroundColor: "rgba(255, 255, 255, 0.95)",
                         border: "none",
@@ -708,7 +708,7 @@ useEffect(()=>{
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                         <span className="text-sm">{item.status}</span>
                       </div>
-                      <span className="text-sm font-medium">{item.value}%</span>
+                      <span className="text-sm font-medium">{item.value.toFixed(2)}%</span>
                     </div>
                   ))}
                 </div>

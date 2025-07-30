@@ -1,7 +1,7 @@
 
 "use client"
 import { format } from "date-fns"
-import { useState } from "react"
+import {useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,7 +39,9 @@ import {
   FileText,
   ImageIcon,
   Settings,
+  Save,
   Upload,
+  Download,
   Copy,
   Move,
   Archive,
@@ -64,7 +66,7 @@ import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import ScaleLoader from 'react-spinners/ScaleLoader'
-
+import axios from "axios"
 interface CreateCategoryForm {
   nameRef: React.RefObject<HTMLInputElement | null>;
   parentIdRef: React.RefObject<HTMLSelectElement | null>;
@@ -201,7 +203,8 @@ export function CategoryManagement() {
   // Tabs: Danh mục
   const [categorySearchTerm, setCategorySearchTerm] = useState("")
   const [categoryFilterStatus, setCategoryFilterStatus] = useState("all")
-
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterStatus, setFilterStatus] = useState("all")
   const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false)
   const [isCreateContentOpen, setIsCreateContentOpen] = useState(false)
 const [expandedCateId, setExpandedCateId] = useState<number | null>(null);
@@ -295,8 +298,8 @@ const [expandedCateId, setExpandedCateId] = useState<number | null>(null);
     //   createdDate: "2024-01-19",
     // },
   ])
-  const filteredCategories = categories.filter((category) => {
-    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase())
+ const filteredCategories = categories.filter((category) => {
+    const matchesSearch = category.categoryname.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = filterStatus === "all" || category.status === filterStatus
     return matchesSearch && matchesStatus
   })
@@ -411,16 +414,7 @@ const [expandedCateId, setExpandedCateId] = useState<number | null>(null);
 
 
   //lọc
-  const filteredContents = contents.filter((content) => {
-    const matchesStatus =
-      contentFilterStatus === "all" || content.status === contentFilterStatus
-    const matchesKeyword =
-      contentSearchTerm === "" ||
-      content.title.toLowerCase().includes(contentSearchTerm.toLowerCase()) ||
-      content.slug.toLowerCase().includes(contentSearchTerm.toLowerCase())
-
-    return matchesStatus && matchesKeyword
-  })
+ 
 
   const fetchData = async (page : number, size = 10) => {
     setIsLoading(true)
@@ -667,7 +661,22 @@ useEffect(()=>{
                   <DialogTitle>Tạo danh mục mới</DialogTitle>
                   <DialogDescription>Thêm danh mục sản phẩm mới vào hệ thống</DialogDescription>
                 </DialogHeader>
-                <CreateCategoryForm />
+                 <CreateCategoryForm
+                  nameRef={nameRef}
+                  parentIdRef={parentIdRef}
+                  imageFile={imageFile}
+                  setImage={setImage}
+                  imagePreview={imagePreview}
+                  setImagePreview={setImagePreview}
+                  setStatusCategory={setStatusCategory}
+
+                  fileInputRef={fileInputRef}
+                  handleUploadClick={handleUploadClick}
+                  handleSubmit={handleSubmit}
+                  parentCategory={parentCategory}
+                  possibleUpload={possibleUpload}
+                  setPossibleUpload={setPossibleUpload}
+                />
               </DialogContent>
             </Dialog>
           </div>
@@ -678,6 +687,7 @@ useEffect(()=>{
               <CardDescription>Tổng cộng {filteredCategories.length} danh mục</CardDescription>
             </CardHeader>
             <CardContent>
+              {!isLoading ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1015,7 +1025,7 @@ useEffect(()=>{
         </TabsContent>
 
         {/* Tab Nội dung */}
-        <TabsContent value="content" className="space-y-6">
+         <TabsContent value="content" className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -1215,33 +1225,7 @@ function CreateCategoryForm({
   parentCategory }: CreateCategoryForm) {
 
 
-//function tạo mới
-function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
-  const [title, setTitle] = useState("")
-  const [slug, setSlug] = useState("")
-  const [type, setType] = useState("policy")
-  const [content, setContent] = useState("")
-  const [status, setStatus] = useState("draft")
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents`, {
-        title,
-        slug,
-        type,
-        content,
-        status,
-        adminId: 1
-      })
-
-      if (onSuccess) onSuccess()
-      alert("Tạo nội dung thành công")
-    } catch (error) {
-      console.error("Lỗi khi tạo nội dung:", error)
-      alert(" Đã xảy ra lỗi khi tạo nội dung")
-    }
-  }
 
   return (
     <form onSubmit={(e) => handleSubmit(e, "add")}>
@@ -1398,6 +1382,87 @@ function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
         </DialogFooter>
       </div>
     </form>
+  )
+}
+//     <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="contentTitle" className="text-right">Tiêu đề</Label>
+//         <Input id="contentTitle" value={title} onChange={(e) => setTitle(e.target.value)} className="col-span-3" />
+//       </div>
+
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="contentSlug" className="text-right">Slug</Label>
+//         <Input id="contentSlug" value={slug} onChange={(e) => setSlug(e.target.value)} className="col-span-3" />
+//       </div>
+
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="contentType" className="text-right">Loại nội dung</Label>
+//         <select value={type} onChange={(e) => setType(e.target.value)} className="col-span-3 px-3 py-2 border rounded-md">
+//           <option value="policy">Chính sách</option>
+//           <option value="guide">Hướng dẫn</option>
+//           <option value="news">Tin tức</option>
+//         </select>
+//       </div>
+
+//       <div className="grid grid-cols-4 items-start gap-4">
+//         <Label htmlFor="contentBody" className="text-right mt-2">Nội dung</Label>
+//         <Textarea id="contentBody" value={content} onChange={(e) => setContent(e.target.value)} className="col-span-3" rows={8} />
+//       </div>
+
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label className="text-right">Trạng thái</Label>
+//         <select value={status} onChange={(e) => setStatus(e.target.value)} className="col-span-3 px-3 py-2 border rounded-md">
+//           <option value="draft">Bản nháp</option>
+//           <option value="published">Xuất bản</option>
+//         </select>
+//       </div>
+
+//       <DialogFooter>
+//         <Button
+//           variant="outline"
+//           type="button"
+//           onClick={(e) => {
+//             setStatus("draft")
+//             setTimeout(() => handleSubmit(e), 0)
+//           }}
+//         >
+//           Lưu
+//         </Button>
+//       </DialogFooter>
+//     </form>
+//   )
+// }
+
+
+//function tạo mới
+function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
+  const [title, setTitle] = useState("")
+  const [slug, setSlug] = useState("")
+  const [type, setType] = useState("policy")
+  const [content, setContent] = useState("")
+  const [status, setStatus] = useState("draft")
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents`, {
+        title,
+        slug,
+        type,
+        content,
+        status,
+        adminId: 1
+      })
+
+      if (onSuccess) onSuccess()
+      alert("Tạo nội dung thành công")
+    } catch (error) {
+      console.error("Lỗi khi tạo nội dung:", error)
+      alert(" Đã xảy ra lỗi khi tạo nội dung")
+    }
+  }
+
+  return (
     <form onSubmit={handleSubmit} className="grid gap-4 py-4">
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="contentTitle" className="text-right">Tiêu đề</Label>
@@ -1447,34 +1512,6 @@ function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
   )
 }
 
-
-//function tạo mới
-function CreateContentForm({ onSuccess }: { onSuccess?: () => void }) {
-  const [title, setTitle] = useState("")
-  const [slug, setSlug] = useState("")
-  const [type, setType] = useState("policy")
-  const [content, setContent] = useState("")
-  const [status, setStatus] = useState("draft")
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_BACKEND}/admin/contents`, {
-        title,
-        slug,
-        type,
-        content,
-        status,
-        adminId: 1
-      })
-
-      if (onSuccess) onSuccess()
-      alert("Tạo nội dung thành công")
-    } catch (error) {
-      console.error("Lỗi khi tạo nội dung:", error)
-      alert(" Đã xảy ra lỗi khi tạo nội dung")
-    }
-  }
 //function update
 function EditContentForm({
   data,

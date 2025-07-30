@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState,useEffect } from "react"
 import {
   BarChart3,
   Users,
@@ -119,54 +119,55 @@ export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
- 
+  const email = localStorage.getItem('adminEmail')
+  const id = localStorage.getItem('id')
+
+  console.log('----Đã chuyển qua id',id)
+  console.log('----Đã chuyển qua email',email)
+// const [currentAdminId, setCurrentAdminId] = useState<number | null>(null);
+//   const [allowedTabs, setAllowedTabs] = useState<string[]>([]);
+
+//   useEffect(() => {
+//     axios
+//       .get(`${process.env.NEXT_PUBLIC_API_BACKEND}/api/admin/me`)
+//       .then(res => setCurrentAdminId(res.data.adminid))
+//       .catch(() => setCurrentAdminId(1));
+//   }, []);
+
+//   useEffect(() => {
+//     if (currentAdminId !== null) {
+//       if (currentAdminId === 1) {
+//         setAllowedTabs(menuItems.map(m => m.id));
+//       } else {
+//         axios
+//           .get<string[]>(`${process.env.NEXT_PUBLIC_API_BACKEND}/api/admin/permissions/${currentAdminId}`)
+//           .then(res => {
+//             console.log("API permissions response:", res.data);
+//             setAllowedTabs(res.data);
+//           })
+//           .catch(() => setAllowedTabs([]));
+//       }
+//     }
+//   }, [currentAdminId]);
+
+//   useEffect(() => {
+//   console.log("currentAdminId:", currentAdminId);
+// }, [currentAdminId]);
 
 
+// //log
+//   console.log("Rendering sidebar with allowedTabs:", allowedTabs);
+//   menuItems.forEach(item => {
+//     console.log(`menuItem id: "${item.id}", included:`, allowedTabs.includes(item.id));
+//   });
 
-  const [currentAdminId, setCurrentAdminId] = useState<number | null>(null);
-  const [allowedTabs, setAllowedTabs] = useState<string[]>([]);
-
-  useEffect(() => {
-    axios
-      .get(`${process.env.NEXT_PUBLIC_API_BACKEND}/api/admin/me`)
-      .then(res => setCurrentAdminId(res.data.adminid))
-      .catch(() => setCurrentAdminId(1));
-  }, []);
-
-  useEffect(() => {
-    if (currentAdminId !== null) {
-      if (currentAdminId === 1) {
-        setAllowedTabs(menuItems.map(m => m.id));
-      } else {
-        axios
-          .get<string[]>(`${process.env.NEXT_PUBLIC_API_BACKEND}/api/admin/permissions/${currentAdminId}`)
-          .then(res => {
-            console.log("API permissions response:", res.data);
-            setAllowedTabs(res.data);
-          })
-          .catch(() => setAllowedTabs([]));
-      }
-    }
-  }, [currentAdminId]);
-
-  useEffect(() => {
-  console.log("currentAdminId:", currentAdminId);
-}, [currentAdminId]);
-
-
-//log
-  console.log("Rendering sidebar with allowedTabs:", allowedTabs);
-  menuItems.forEach(item => {
-    console.log(`menuItem id: "${item.id}", included:`, allowedTabs.includes(item.id));
-  });
-
-  allowedTabs.forEach(tab => {
-    menuItems.forEach(item => {
-      if (item.id.trim().toLowerCase() === tab.trim().toLowerCase()) {
-        console.log(`MATCH: "${item.id}" == "${tab}"`);
-      }
-    });
-  });
+//   allowedTabs.forEach(tab => {
+//     menuItems.forEach(item => {
+//       if (item.id.trim().toLowerCase() === tab.trim().toLowerCase()) {
+//         console.log(`MATCH: "${item.id}" == "${tab}"`);
+//       }
+//     });
+//   });
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -266,18 +267,16 @@ export function AdminDashboard() {
         return <DashboardStats />
     }
   }
-
-  useEffect(() => {
-    console.log("allowedTabs:", allowedTabs);
-    console.log("menuItems ids:", menuItems.map(m => m.id));
-    if (allowedTabs && allowedTabs.length > 0) {
-      allowedTabs.forEach(tab => {
-        const found = menuItems.some(m => m.id === tab);
-        console.log(`allowedTab "${tab}" match menuItems:`, found);
-      });
-    }
-  }, [allowedTabs]);
-
+  //  useEffect(() => {
+  //   console.log("allowedTabs:", allowedTabs);
+  //   console.log("menuItems ids:", menuItems.map(m => m.id));
+  //   if (allowedTabs && allowedTabs.length > 0) {
+  //     allowedTabs.forEach(tab => {
+  //       const found = menuItems.some(m => m.id === tab);
+  //       console.log(`allowedTab "${tab}" match menuItems:`, found);
+  //     });
+  //   }
+  // }, [allowedTabs]);
   return (
   <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
   {/* Header */}
@@ -355,24 +354,22 @@ export function AdminDashboard() {
         
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="px-2 space-y-1">
-            {menuItems.filter(item => allowedTabs.includes(item.id))
-                  .map(item => {
-                    const Icon = item.icon
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={`w-full flex items-center px-4 py-3 text-left rounded-xl transition-all duration-200 group ${activeTab === item.id
-                          ? "bg-gradient-to-r from-[#001F54] to-[#4DD0E1] text-white shadow-lg"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-[#001F54]"
-                          }`}
-                      >
-                        <Icon
-                          className={`w-5 h-5 mr-3 ${activeTab === item.id
-                            ? "text-white"
-                            : "text-gray-500 group-hover:text-[#001F54]"
-                            }`}
-                            />
+            {menuItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center px-4 py-2.5 text-left rounded-xl transition-all duration-200 group
+                    ${activeTab === item.id
+                      ? "bg-gradient-to-r from-[#001F54] to-[#4DD0E1] text-white shadow-lg"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-[#001F54]"
+                    }`}
+                >
+                  <Icon
+                    className={`w-5 h-5 mr-0 group-hover:mr-3 flex-shrink-0
+                      ${activeTab === item.id ? "text-white" : "text-gray-500 group-hover:text-[#001F54]"}`}
+                  />
                   <div
                     className={`
                       opacity-0 group-hover:opacity-100
