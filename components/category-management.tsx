@@ -695,7 +695,7 @@ useEffect(()=>{
                     <TableHead>Cấp độ</TableHead>
                     <TableHead>Sản phẩm</TableHead>
                     <TableHead>Trạng thái</TableHead>
-                    <TableHead>Thứ tự</TableHead>
+                    {/* <TableHead>Thứ tự</TableHead> */}
                     <TableHead>Ngày tạo</TableHead>
                     <TableHead className="text-right">Hành động</TableHead>
                   </TableRow>

@@ -119,11 +119,11 @@ export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
-  const email = localStorage.getItem('adminEmail')
-  const id = localStorage.getItem('id')
+  // const email = localStorage.getItem('adminEmail')
+  // const id = localStorage.getItem('id')
 
-  console.log('----Đã chuyển qua id',id)
-  console.log('----Đã chuyển qua email',email)
+  // console.log('----Đã chuyển qua id',id)
+  // console.log('----Đã chuyển qua email',email)
 // const [currentAdminId, setCurrentAdminId] = useState<number | null>(null);
 //   const [allowedTabs, setAllowedTabs] = useState<string[]>([]);
 
@@ -179,7 +179,7 @@ export function AdminDashboard() {
                 <RecentActivity />
               </div>
               <div className="space-y-6">
-                <Card>
+                {/* <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <AlertTriangle className="w-5 h-5 text-orange-500" />
@@ -209,9 +209,9 @@ export function AdminDashboard() {
                       <Badge className="bg-blue-500">Thông tin</Badge>
                     </div>
                   </CardContent>
-                </Card>
+                </Card> */}
 
-                <Card>
+                {/* <Card>
                   <CardHeader>
                     <CardTitle>Hiệu suất Hệ thống</CardTitle>
                   </CardHeader>
@@ -238,7 +238,7 @@ export function AdminDashboard() {
                       <Progress value={43} className="h-2" />
                     </div>
                   </CardContent>
-                </Card>
+                </Card> */}
               </div>
             </div>
           </div>

@@ -367,9 +367,9 @@ useEffect(() => {
                     dataKey="value"
                     label={({ name, value }) => `${name}: ₫${(value / 1000000).toFixed(1)}M`}
                   >
-                    {topProductsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 60%)`} />
-                    ))}
+                    {topProductsData?.map((_, index) => (
+  <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 60%)`} />
+)) || []}
                   </Pie>
                   <Tooltip
                     formatter={(value: any) => [`₫${(value / 1000000).toFixed(1)}M`, "Doanh thu"]}

@@ -34,17 +34,17 @@ const handleLogin = async (e: React.FormEvent) => {
 
     // Axios tự động parse JSON, data nằm trong response.data
     const data = response.data
-    console.log('Daaataaa ',data.email)
-    console.log('ID Admin + ' , data.id)
-    console.log('log email----',email)
-    // Lưu token nếu cần
-    if (typeof window !== 'undefined' && data.email) {
-      // localStorage.setItem("adminToken", data.token)
-      console.log('log window email----',email)
-      localStorage.setItem("adminEmail", email) 
-      localStorage.setItem("id",data.id)
+    // console.log('Daaataaa ',data.email)
+    // console.log('ID Admin + ' , data.id)
+    // console.log('log email----',email)
+    // // Lưu token nếu cần
+    // if (typeof window !== 'undefined' && data.email) {
+    //   // localStorage.setItem("adminToken", data.token)
+    //   console.log('log window email----',email)
+    //   localStorage.setItem("adminEmail", email) 
+    //   localStorage.setItem("id",data.id)
 
-    }
+    // }
     setIsAuthenticated(true)
 
   } catch (error: any) {
